@@ -1,0 +1,37 @@
+{% extends 'accounts/dashboard.html' %}
+{% block title %}Guest CVs - HR Dashboard{% endblock %}
+
+{% block content %}
+<h2>Guest CVs</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Full Name</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Blood Group</th>
+      <th>Last Education</th>
+      <th>Current Job Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cv in guest_cvs %}
+    <tr>
+      <td>{{ cv.full_name }}</td>
+      <td>{{ cv.email }}</td>
+      <td>{{ cv.user.phone_number }}</td>
+      <td>{{ cv.blood_group }}</td>
+      <td>{{ cv.last_education }}</td>
+      <td>{{ cv.current_job_status }}</td>
+      <td><a href="{% url 'guest_cv_detail' cv.pk %}" class="btn btn-sm btn-primary">View</a></td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">No guest CVs found.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

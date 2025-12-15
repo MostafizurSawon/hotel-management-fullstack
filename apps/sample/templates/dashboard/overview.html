@@ -1,0 +1,441 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ===== Legend pills ===== */
+  .legend {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  .legend-free {
+    background: #dcfce7;               /* deeper green tint */
+    border: 1px solid #86efac;
+  }
+  .legend-busy {
+    background: #fee2e2;               /* deeper red tint */
+    border: 1px solid #fca5a5;
+  }
+
+  /* ===== Grid layout ===== */
+  .rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); /* wider cards for long guest names */
+    gap: 14px;
+  }
+
+  /* ===== Room cards ===== */
+  .room-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 1rem;
+    padding: 1rem 1.1rem;
+    background: #fff;
+    text-decoration: none;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    min-height: 150px;
+  }
+  .room-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+  }
+
+  /* ===== Available ===== */
+  .room-card.free {
+    background: linear-gradient(180deg, #e6fff2 0%, #f2fff8 55%, #ffffff 100%);
+    border-color: #16a34a;             /* vivid green border */
+  }
+  .room-card.free .room-status {
+    color: #15803d;                     /* darker green text */
+    font-weight: 700;
+  }
+  .room-card.free:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 22px rgba(22, 163, 74, 0.25);  /* green glow */
+  }
+
+  /* ===== Occupied ===== */
+  .room-card.busy {
+    background: linear-gradient(180deg, #ffe1e1 0%, #fff0f0 55%, #ffffff 100%);
+    border-color: #dc2626;              /* vivid red border */
+  }
+  .room-card.busy .room-status {
+    color: #991b1b;                     /* strong crimson text */
+    font-weight: 800;
+  }
+  .room-card.busy:hover {
+    box-shadow: 0 10px 22px rgba(220, 38, 38, 0.28);  /* red glow */
+    transform: translateY(-3px);
+  }
+
+  /* ===== Card content ===== */
+  .room-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .room-no {
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: 0.2px;
+  }
+  .room-meta {
+    color: #475569;
+    font-size: 0.9rem;
+  }
+  .room-rate {
+    margin-top: 2px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  /* ===== Text blocks ===== */
+  .room-guest,
+  .room-dates {
+    color: #374151;
+    font-size: 0.92rem;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere; /* ensures long names or words break nicely */
+  }
+  .room-dates {
+    margin-top: 2px;
+  }
+  .room-status {
+    margin-top: 6px;
+    font-size: 0.9rem;
+  }
+
+  /* ===== Legend dots used in header =====
+     <span class="legend-dot free"></span> <span class="legend-dot busy"></span> */
+  .legend-dot{
+    display:inline-block;
+    width:12px; height:12px;
+    border-radius:3px;
+    vertical-align:middle;
+    margin-right:6px;
+    border:1px solid transparent;
+  }
+  .legend-dot.free{  background:#dcfce7; border-color:#86efac; }
+  .legend-dot.busy{  background:#fee2e2; border-color:#fca5a5; }
+</style>
+
+
+<div class="">
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">{{ page_title }}</h4>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+      <div class="stat-card stat-primary shadow-sm">
+        <div class="stat-meta"><span class="label">Total Bookings</span><i class="ti ti-calendar-event stat-icon"></i></div>
+        <div class="stat-value" id="kpi-total-bookings">{{ total_bookings }}</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="stat-card stat-success shadow-sm">
+        <div class="stat-meta"><span class="label">Guests Today</span><i class="ti ti-users stat-icon"></i></div>
+        <div class="stat-value" id="kpi-active-guests">{{ active_guests }}</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="stat-card stat-info shadow-sm">
+        <div class="stat-meta"><span class="label">Available Rooms</span><i class="ti ti-bed stat-icon"></i></div>
+        <div class="stat-value" id="kpi-available-rooms">{{ available_rooms }}</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+      <div class="stat-card stat-warning shadow-sm">
+        <div class="stat-meta"><span class="label">Total Revenue</span><i class="ti ti-cash stat-icon"></i></div>
+        <div class="stat-value" id="kpi-total-revenue">৳{{ total_revenue|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Room Occupancy (Today) ===== -->
+  <div class="card shadow-sm mt-3">
+    <div class="card-header bg-light fw-semibold d-flex align-items-center justify-content-between">
+      <span><i class="ti ti-bed icon-sm me-1"></i> Room Occupancy — {{ today|date:"d M Y" }}</span>
+      <div class="small">
+        <span class="legend-dot free"></span> Available
+        <span class="legend-dot busy ms-3"></span> Occupied
+      </div>
+    </div>
+
+    <div class="card-body">
+      {% if floor_rooms %}
+        {% for block in floor_rooms %}
+          <div class="floor-row mb-3">
+            <div class="floor-header my-3">
+              <hr>
+              <span class="badge rounded-pill bg-primary text-white-emphasis">
+                {% if block.floor == "—" %}Other{% else %}Floor {{ block.floor }}{% endif %}
+              </span>
+
+            </div>
+
+            <div class="rooms-grid">
+              {% for r in block.rooms %}
+                {% if r.occupied %}
+                  <!-- Red card: goes to active booking detail -->
+                  <a class="room-card busy" href="{% url 'booking_detail' r.booking_id %}"
+                    title="View booking #{{ r.booking_id }}">
+                    <div class="room-top">
+                      <div class="room-no">#{{ r.number }}</div>
+                      <div class="room-status"><i class="ti ti-lock me-1"></i>Occupied</div>
+                    </div>
+                    <div class="room-meta">{{ r.category }}</div>
+                    <div class="room-guest"><i class="ti ti-user me-1"></i>{{ r.guest }}</div>
+                    <div class="room-dates">
+                      <i class="ti ti-calendar-event me-1"></i>
+                      {{ r.ci|date:"d M Y" }} → {{ r.co|date:"d M Y" }}
+                    </div>
+                    <div class="room-rate">৳ {{ r.rate }}</div>
+                  </a>
+                {% else %}
+                  <!-- Green card: go to booking create with prefilled Ci/Co -->
+                  <a class="room-card free"
+                    href="{% url 'booking_create' %}?room={{ r.id }}&ci={{ today|date:'Y-m-d' }}&co={{ tomorrow|date:'Y-m-d' }}"
+                    title="Book this room">
+                    <div class="room-top">
+                      <div class="room-no">#{{ r.number }}</div>
+                      <div class="room-status"><i class="ti ti-check me-1"></i>Available</div>
+                    </div>
+                    <div class="room-meta">{{ r.category }}</div>
+                    <div class="room-guest text-info small"><i class="ti ti-user me-1"></i>No guest</div>
+                    <div class="room-dates text-info small">
+                      <i class="ti ti-calendar-event me-1"></i>{{ today|date:"d M Y" }}
+                      {% comment %} → {{ tomorrow|date:"d M Y" }}  {% endcomment %}
+                    </div>
+                    <div class="room-rate">৳ {{ r.rate }}</div>
+                  </a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center text-muted py-3">No rooms found.</div>
+      {% endif %}
+    </div>
+  </div>
+{% comment %} </div> {% endcomment %}
+
+  <!-- Date filter for check-ins/outs -->
+  <div class="card shadow-sm mt-5 mb-2">
+    <div class="card-body py-3 d-flex flex-wrap gap-2 align-items-end">
+      <div>
+        <label class="form-label mb-1">Select date For Check-in and Check-out data.</label>
+        <input type="date" id="fltDate" class="form-control" style="min-width:180px">
+      </div>
+      <button id="btnApply" class="btn btn-primary"><i class="ti ti-filter me-1"></i> Apply</button>
+      <button id="btnToday" class="btn btn-outline-secondary"><i class="ti ti-calendar-event me-1"></i> Today</button>
+      <span class="ms-auto small text-muted">Showing data for: <span id="selDateLabel">today</span></span>
+    </div>
+  </div>
+
+  <!-- Check-ins / Check-outs -->
+  <div class="row g-3 ">
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold"><i class="ti ti-login icon-sm me-1"></i> Check-ins</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light"><tr><th>Guest</th><th>Room</th><th>Date</th><th class="text-end">Days</th></tr></thead>
+              <tbody id="tbl-checkins">
+                {% for b in todays_checkins %}
+                  <tr>
+                    <td>{{ b.guest.full_name }}</td>
+                    <td>{{ b.room.room_number }} ({{ b.room.category.name|default:"—" }})</td>
+                    <td>{{ b.check_in|date:"d M Y" }}</td>
+                    <td class="text-end">{{ b.nights|default:"" }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted py-3">No check-ins today</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold"><i class="ti ti-logout icon-sm me-1"></i> Check-outs</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light"><tr><th>Guest</th><th>Room</th><th>Date</th><th class="text-end">Nights</th></tr></thead>
+              <tbody id="tbl-checkouts">
+                {% for b in todays_checkouts %}
+                  <tr>
+                    <td>{{ b.guest.full_name }}</td>
+                    <td>{{ b.room.room_number }} ({{ b.room.category.name|default:"—" }})</td>
+                    <td>{{ b.check_out|date:"d M Y" }}</td>
+                    <td class="text-end">{{ b.nights|default:"" }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted py-3">No check-outs today</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+  <!-- Charts Row -->
+  <div class="row g-3 mt-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold"><i class="ti ti-chart-line icon-sm me-1"></i> Bookings (Last 7 Days)</div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="bookingChart"></canvas></div></div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold"><i class="ti ti-bar-chart icon-sm me-1"></i> Revenue by Room Category</div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="revenueCatChart"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Revenue -->
+  <div class="card shadow-sm mt-4">
+    <div class="card-header bg-light fw-semibold"><i class="ti ti-chart-arcs icon-sm me-1"></i> Monthly Revenue Trend (Last 6 Months)</div>
+    <div class="card-body"><div class="chart-wrap"><canvas id="revenueMonthChart"></canvas></div></div>
+  </div>
+
+
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // auto-close Bootstrap alerts
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(a => new bootstrap.Alert(a).close());
+  }, 3500);
+</script>
+<script>
+  // ===== Charts =====
+  const baseLineOpts = {
+    responsive:true, maintainAspectRatio:false,
+    layout:{ padding:{ top:14, right:8, bottom:8, left:8 } },
+    plugins:{ legend:{ display:false }, tooltip:{ mode:'index', intersect:false } },
+    interaction:{ mode:'nearest', axis:'x', intersect:false },
+    scales:{ y:{ beginAtZero:true, grid:{ color:'rgba(0,0,0,.06)' } }, x:{ grid:{ display:false } } }
+  };
+
+  new Chart(document.getElementById('bookingChart'), {
+    type:'line',
+    data:{ labels: {{ chart_labels|safe }}, datasets:[{ label:'Bookings', data: {{ chart_data|safe }},
+      borderColor:'#5A67D8', backgroundColor:'rgba(90,103,216,.12)', fill:true, tension:.35, borderWidth:2, pointRadius:3, pointHoverRadius:4 }] },
+    options: baseLineOpts
+  });
+
+  new Chart(document.getElementById('revenueCatChart'), {
+    type:'bar',
+    data:{ labels: {{ cat_labels|safe }}, datasets:[{ label:'Revenue (৳)', data: {{ cat_data|safe }},
+      backgroundColor:['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#858796'], borderWidth:0, borderRadius:6, barThickness:'flex', maxBarThickness:36 }] },
+    options:{ ...baseLineOpts, scales:{ ...baseLineOpts.scales, y:{ ...baseLineOpts.scales.y, ticks:{ callback:v=>v.toLocaleString() } } } }
+  });
+
+  new Chart(document.getElementById('revenueMonthChart'), {
+    type:'line',
+    data:{ labels: {{ month_labels|safe }}, datasets:[{ label:'Revenue (৳)', data: {{ month_data|safe }},
+      borderColor:'#2EB85C', backgroundColor:'rgba(46,184,92,.14)', fill:true, tension:.35, borderWidth:2, pointRadius:3, pointHoverRadius:4 }] },
+    options:{ ...baseLineOpts, scales:{ ...baseLineOpts.scales, y:{ ...baseLineOpts.scales.y, ticks:{ callback:v=>v.toLocaleString() } } } }
+  });
+</script>
+
+<script>
+  // ===== Pulse with date filter =====
+  const $ = id => document.getElementById(id);
+  const todayISO = () => new Date().toISOString().slice(0,10);
+
+  function renderRows(rows){
+    if(!rows || !rows.length) return `<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>`;
+    return rows.map(r => `
+      <tr>
+        <td>${r.guest}</td>
+        <td>${r.room}</td>
+        <td>${r.time}</td>
+        <td class="text-end">${r.nights ?? ""}</td>
+      </tr>`).join("");
+  }
+
+  function updateSelectedDateLabel(){
+    const d = $('fltDate')?.value;
+    $('selDateLabel').textContent = d ? new Date(d).toLocaleDateString() : 'today';
+  }
+
+  async function pulse(){
+    const d = $('fltDate')?.value || todayISO();
+    try{
+      const res = await fetch(`{% url 'dashboard_pulse' %}?d=${encodeURIComponent(d)}`);
+      if(!res.ok) throw new Error();
+      const j = await res.json();
+      $('kpi-total-bookings').textContent  = j.kpi.total_bookings;
+      $('kpi-active-guests').textContent   = j.kpi.active_guests;
+      $('kpi-available-rooms').textContent = j.kpi.available_rooms;
+      $('kpi-total-revenue').textContent   = '৳' + (Number(j.kpi.total_revenue||0)).toFixed(2);
+      $('tbl-checkins').innerHTML  = renderRows(j.checkins);
+      $('tbl-checkouts').innerHTML = renderRows(j.checkouts);
+    }catch(e){ /* silent */ }
+  }
+
+  // init
+  (function(){
+    if ($('fltDate') && !$('fltDate').value) $('fltDate').value = todayISO();
+    updateSelectedDateLabel();
+    pulse();
+    setInterval(pulse, 30000);
+    $('btnApply')?.addEventListener('click', ()=>{ updateSelectedDateLabel(); pulse(); });
+    $('btnToday')?.addEventListener('click', ()=>{ $('fltDate').value = todayISO(); updateSelectedDateLabel(); pulse(); });
+    $('fltDate')?.addEventListener('change', ()=>{ updateSelectedDateLabel(); pulse(); });
+  })();
+</script>
+
+<style>
+/* ===== Stat Cards ===== */
+.stat-card{ position:relative; border-radius:.9rem; padding:1rem 1.25rem 1.1rem; color:#fff; overflow:hidden; min-height:110px; display:flex; flex-direction:column; justify-content:space-between; }
+.stat-card .label{ font-size:.92rem; opacity:.95; letter-spacing:.2px; }
+.stat-card .stat-value{ font-size:1.9rem; font-weight:700; line-height:1.1; text-shadow:0 1px 0 rgba(0,0,0,.08); }
+.stat-card .stat-icon{ position:absolute; right:.9rem; top:.8rem; font-size:1.6rem; opacity:.35; line-height:1; pointer-events:none; filter:drop-shadow(0 2px 6px rgba(0,0,0,.12)); }
+.stat-primary{ background:linear-gradient(135deg,#5A67D8 0%,#6B46C1 100%); }
+.stat-success{ background:linear-gradient(135deg,#22C55E 0%,#16A34A 100%); }
+.stat-info{ background:linear-gradient(135deg,#06B6D4 0%,#0891B2 100%); }
+.stat-warning{ background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%); }
+.icon-sm{font-size:1rem;line-height:1;}
+.card-header{font-size:.95rem;}
+.chart-wrap{ position:relative; height:260px; }
+@media (max-width: 991px){ .chart-wrap{ height:220px; } }
+</style>
+{% endblock %}

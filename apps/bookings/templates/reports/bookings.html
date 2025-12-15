@@ -1,0 +1,33 @@
+{% extends layout_path %}
+{% load humanize %}
+{% block title %}Booking Summary{% endblock %}
+{% block content %}
+<h4 class="mb-3">{{ page_title }}</h4>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>#</th><th>Check-in</th><th>Room</th><th>Guest</th>
+          <th class="text-end">Net</th><th class="text-end">Paid</th><th class="text-end">Due</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+          <tr>
+            <td>{{ b.id }}</td>
+            <td>{{ b.check_in|date:"d M Y" }}</td>
+            <td>{{ b.room.room_number }}</td>
+            <td>{{ b.guest.full_name }}</td>
+            <td class="text-end">{{ b.net_amount|intcomma }}</td>
+            <td class="text-end">{{ b.payment_amount|intcomma }}</td>
+            <td class="text-end text-warning">{{ b.due_amount|intcomma }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-3">No bookings</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

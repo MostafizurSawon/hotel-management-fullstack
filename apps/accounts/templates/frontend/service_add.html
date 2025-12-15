@@ -1,0 +1,18 @@
+{% extends 'dashboard/admin_d.html' %}
+{% load crispy_forms_tags %}
+
+{% block admin-content %}
+<div class="container py-4 my-5">
+  <a href="{% url 'services_list' %}" class="btn btn-secondary mb-3">Service List</a>
+
+  <h2>{{ title }}</h2>
+
+  
+
+  <form method="POST" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form|crispy }}
+    <button type="submit" class="btn btn-primary mt-3">Save Service</button>
+  </form>
+</div>
+{% endblock admin-content %}

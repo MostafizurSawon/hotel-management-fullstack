@@ -1,0 +1,451 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}Add / Edit Booking{% endblock %}
+
+{% block content %}
+<div class="">
+
+  {# ---- GLOBAL ALERT: non-field + field errors summary ---- #}
+  {% if form.errors or form.non_field_errors %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <strong>Please correct the errors below.</strong>
+      <ul class="mb-0 mt-2 small">
+        {% for err in form.non_field_errors %}
+          <li>{{ err }}</li>
+        {% endfor %}
+        {% for field in form %}
+          {% for e in field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ e|striptags }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endif %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">{{ page_title }}</h4>
+    <a href="{% url 'booking_list' %}" class="btn btn-outline-secondary">
+      <i class="ti ti-arrow-left icon-sm me-1"></i> Back
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+
+          <!-- Guest -->
+          <div class="col-md-4 position-relative">
+            <label class="form-label">Guest</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="ti ti-search icon-sm"></i></span>
+              <input type="text" id="guestSearch" class="form-control"
+                     placeholder="Search by name / phone / email" autocomplete="off">
+            </div>
+            <div id="guestSuggest" class="list-group shadow-sm"
+                 style="position:absolute; left:0; right:0; top:calc(100% + 4px);
+                        display:none; z-index:1080; max-height:260px; overflow:auto;
+                        background:var(--bs-body-bg); border:1px solid var(--bs-border-color);
+                        border-radius:.5rem;"></div>
+            <div class="mt-1">
+              {{ form.guest }}
+              {% if form.guest.errors %}
+                <div class="invalid-feedback d-block">{{ form.guest.errors|striptags }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Check In / Out -->
+          <div class="col-md-4">
+            <label class="form-label">Check In *</label>
+            {{ form.check_in }}
+            {% if form.check_in.errors %}
+              <div class="invalid-feedback d-block">{{ form.check_in.errors|striptags }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Check Out *</label>
+            {{ form.check_out }}
+            {% if form.check_out.errors %}
+              <div class="invalid-feedback d-block">{{ form.check_out.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Room -->
+          <div class="col-md-4">
+            <label class="form-label">Select Room</label>
+            <select name="room" id="roomSelect" class="form-select">
+              <option value="">Select Room</option>
+              {% for item in room_options %}
+                <option value="{{ item.id }}" data-rate="{{ item.rate }}"
+                        {% if form.instance.room_id == item.id or form.data.room == item.id|stringformat:"s" %}selected{% endif %}>
+                  {{ item.label }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text" id="availabilityMsg"></div>
+            {% if form.room.errors %}
+              <div class="invalid-feedback d-block">{{ form.room.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Rent -->
+          <div class="col-md-4">
+            <label class="form-label">Room Rent</label>
+            {{ form.nightly_rate }}
+            {% if form.nightly_rate.errors %}
+              <div class="invalid-feedback d-block">{{ form.nightly_rate.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Totals -->
+          <div class="col-md-2">
+            <label class="form-label">Days</label>
+            <input id="nights" class="form-control" value="0" readonly>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Total Amount</label>
+            <input id="grossAmount" class="form-control" value="0" readonly>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Discount Amount</label>
+            {{ form.discount_amount }}
+            <div id="discountHelp" class="form-text"></div>
+            {% if form.discount_amount.errors %}
+              <div class="invalid-feedback d-block">{{ form.discount_amount.errors|striptags }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Net Amount</label>
+            <input id="netAmount" class="form-control" value="0" readonly>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Payment Amount</label>
+            {{ form.payment_amount }}
+            <div id="paymentHelp" class="form-text"></div>
+            {% if form.payment_amount.errors %}
+              <div class="invalid-feedback d-block">{{ form.payment_amount.errors|striptags }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Due</label>
+            <input id="dueAmount" class="form-control" value="0" readonly>
+          </div>
+
+          <!-- Notes -->
+          <div class="col-md-12 mt-2">
+            <label class="form-label">Notes</label>
+            {{ form.notes }}
+            {% if form.notes.errors %}
+              <div class="invalid-feedback d-block">{{ form.notes.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Status (only on edit) + live badge -->
+          {% if is_edit %}
+            <div class="col-md-4 mt-2">
+              <label class="form-label d-flex align-items-center gap-2">
+                Status
+                <span id="statusBadge" class="badge">—</span>
+              </label>
+              {{ form.status }}
+              {% if form.status.errors %}<div class="invalid-feedback d-block">{{ form.status.errors|striptags }}</div>{% endif %}
+              <div class="form-text">Changing status will reflect immediately in reports.</div>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button id="submitBtn" type="submit" class="btn btn-primary">
+            {% if is_edit %}
+              <i class="ti ti-check icon-sm me-1"></i> Update Booking
+            {% else %}
+              <i class="ti ti-plus icon-sm me-1"></i> Add New Booking
+            {% endif %}
+          </button>
+          <a href="{% url 'booking_create' %}" class="btn btn-light">
+            <i class="ti ti-refresh icon-sm me-1"></i> Reset
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.icon-sm { font-size:1rem; line-height:1; }
+.is-invalid { border-color: var(--bs-danger) !important; }
+</style>
+
+<script>
+let gsTimer = null, gsIndex = -1;
+
+function hideGuestSuggest(){
+  guestSuggest.style.display = "none";
+  guestSuggest.innerHTML = "";
+  gsIndex = -1;
+}
+function renderGuestSuggest(items){
+  if(!items.length){ hideGuestSuggest(); return; }
+  guestSuggest.innerHTML = items.map(it => `
+    <button type="button"
+            class="list-group-item list-group-item-action"
+            data-id="${it.id}"
+            data-name="${it.name}">
+      ${it.label}
+    </button>`).join("");
+  guestSuggest.style.display = "block";
+  gsIndex = -1;
+}
+
+// input -> debounce -> fetch
+guestSearch?.addEventListener("input", () => {
+  const q = guestSearch.value.trim();
+  if (gsTimer) clearTimeout(gsTimer);
+  if (!q) { hideGuestSuggest(); return; }
+  gsTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`{% url 'api_guest_search' %}?q=${encodeURIComponent(q)}`);
+      const json = await res.json();
+      renderGuestSuggest(json.results || []);
+    } catch (e) {
+      hideGuestSuggest();
+      console.warn("guest search failed", e);
+    }
+  }, 200);
+});
+
+// mouse click select
+guestSuggest?.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-id]");
+  if (!btn) return;
+  const id = btn.getAttribute("data-id");
+  const name = btn.getAttribute("data-name");
+  // set actual <select> value + show chosen name in the search box
+  if (guestSelect) guestSelect.value = id;
+  guestSearch.value = name;
+  hideGuestSuggest();
+});
+
+// outside click -> close
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#guestSuggest") && !e.target.closest("#guestSearch")) {
+    hideGuestSuggest();
+  }
+});
+
+// optional: keyboard nav (↑/↓/Enter)
+guestSearch?.addEventListener("keydown", (e) => {
+  const items = [...guestSuggest.querySelectorAll("button[data-id]")];
+  if (!items.length) return;
+  if (e.key === "ArrowDown") {
+    e.preventDefault(); gsIndex = Math.min(gsIndex + 1, items.length - 1);
+    items.forEach((b,i)=>b.classList.toggle("active", i===gsIndex));
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault(); gsIndex = Math.max(gsIndex - 1, 0);
+    items.forEach((b,i)=>b.classList.toggle("active", i===gsIndex));
+  } else if (e.key === "Enter" && gsIndex >= 0) {
+    e.preventDefault(); items[gsIndex].click();
+  }
+});
+
+
+  // --------- integers only ----------
+  const qi = (n) => {
+    const x = parseFloat(n);
+    if (!Number.isFinite(x)) return 0;
+    return Math.max(0, Math.round(x));
+  };
+  const asIntStr = (n) => String(qi(n));
+
+  // fields
+  const roomSelect=document.getElementById("roomSelect"),
+        nightlyRate=document.getElementById("nightlyRate"),
+        checkIn=document.getElementById("checkIn"),
+        checkOut=document.getElementById("checkOut"),
+        nightsEl=document.getElementById("nights"),
+        grossEl=document.getElementById("grossAmount"),
+        discountEl=document.getElementById("discountAmount"),
+        netEl=document.getElementById("netAmount"),
+        paymentEl=document.getElementById("paymentAmount"),
+        dueEl=document.getElementById("dueAmount"),
+        guestSearch=document.getElementById("guestSearch"),
+        guestSuggest=document.getElementById("guestSuggest"),
+        guestSelect=document.getElementById("id_guest"),
+        availabilityMsg=document.getElementById("availabilityMsg"),
+        discountHelp=document.getElementById("discountHelp"),
+        paymentHelp=document.getElementById("paymentHelp"),
+        submitBtn=document.getElementById("submitBtn");
+
+  // date helpers
+  function dayDiff(a,b){
+    if(!a||!b) return 0;
+    const d1=new Date(a), d2=new Date(b);
+    const ms=d2 - d1;
+    return ms>0 ? Math.round(ms/(1000*60*60*24)) : 0;
+  }
+
+  // main recalc + validation
+  function validateBusiness(){
+    let valid = true;
+    // reset
+    discountEl?.classList.remove("is-invalid");
+    paymentEl?.classList.remove("is-invalid");
+    discountHelp.textContent=""; paymentHelp.textContent="";
+    discountHelp.className="form-text"; paymentHelp.className="form-text";
+
+    const gross = qi(grossEl.value);
+    const discount = qi(discountEl.value);
+    const net = qi(netEl.value);
+    const pay = qi(paymentEl.value);
+
+    if (discount > gross) {
+      valid = false;
+      discountEl.classList.add("is-invalid");
+      discountHelp.textContent = "Discount cannot exceed total amount.";
+      discountHelp.className = "form-text text-danger";
+    }
+    if (pay > net) {
+      valid = false;
+      paymentEl.classList.add("is-invalid");
+      paymentHelp.textContent = "Payment cannot exceed net amount.";
+      paymentHelp.className = "form-text text-danger";
+    }
+    submitBtn.disabled = !valid;
+    return valid;
+  }
+
+  function recalc(){
+    const nights = dayDiff(checkIn.value, checkOut.value);
+    nightsEl.value = asIntStr(nights);
+
+    const rate  = qi(nightlyRate.value);
+    const gross = qi(nights * rate);
+    grossEl.value = asIntStr(gross);
+
+    // clamp discount [0..gross]
+    const discount = Math.max(0, Math.min(qi(discountEl.value), gross));
+    discountEl.value = asIntStr(discount);
+
+    // net
+    const net = Math.max(gross - discount, 0);
+    netEl.value = asIntStr(net);
+
+    // clamp payment [0..net]
+    const payment = Math.max(0, Math.min(qi(paymentEl.value), net));
+    paymentEl.value = asIntStr(payment);
+
+    // due
+    const due = Math.max(net - payment, 0);
+    dueEl.value = asIntStr(due);
+
+    // check availability if meaningful
+    if (roomSelect.value && checkIn.value && checkOut.value) {
+      checkAvailability(roomSelect.value, checkIn.value, checkOut.value);
+    }
+
+    validateBusiness();
+  }
+
+  // availability (unchanged)
+  async function checkAvailability(roomId, cin, cout){
+    availabilityMsg.textContent="Checking availability…";
+    availabilityMsg.className="form-text text-muted";
+    try{
+      const r=await fetch(`{% url 'api_room_availability' %}?room=${encodeURIComponent(roomId)}&in=${encodeURIComponent(cin)}&out=${encodeURIComponent(cout)}`);
+      const j=await r.json();
+      if(j.available){
+        availabilityMsg.textContent="Room is available for selected dates.";
+        availabilityMsg.className="form-text text-success";
+      }else{
+        availabilityMsg.textContent="❌ Room not available for selected dates.";
+        availabilityMsg.className="form-text text-danger";
+      }
+    }catch(e){
+      availabilityMsg.textContent="Could not check availability.";
+      availabilityMsg.className="form-text text-warning";
+    }
+  }
+
+  // load rooms (unchanged)
+  async function loadAvailableRooms(cin, cout){
+    if(!cin||!cout){ return; }
+    roomSelect.innerHTML='<option>Loading...</option>';
+    try{
+      const r=await fetch(`{% url 'api_rooms_available' %}?in=${encodeURIComponent(cin)}&out=${encodeURIComponent(cout)}`);
+      const j=await r.json(); const rooms=j.results||[];
+      if(!rooms.length){
+        roomSelect.innerHTML='<option value="">No rooms available</option>';
+        nightlyRate.value="0"; submitBtn.disabled=true; return;
+      }
+      roomSelect.innerHTML='<option value="">Select Room</option>'+
+        rooms.map(r=>`<option value="${r.id}" data-rate="${r.rate}">${r.label}</option>`).join("");
+      submitBtn.disabled=false;
+    }catch(e){
+      roomSelect.innerHTML='<option value="">Error loading rooms</option>'; submitBtn.disabled=true;
+    }
+  }
+
+  // events
+  [checkIn, checkOut].forEach(el=>{
+    el?.addEventListener("change", ()=>{
+      recalc();
+      if(checkIn.value && checkOut.value){
+        loadAvailableRooms(checkIn.value, checkOut.value);
+      }
+    });
+  });
+
+  roomSelect?.addEventListener("change", ()=>{
+    const opt=roomSelect.options[roomSelect.selectedIndex];
+    nightlyRate.value = asIntStr(opt?.dataset?.rate || "0");
+    recalc();
+  });
+
+  [discountEl, paymentEl].forEach(el=>{
+    el?.addEventListener("input", recalc);
+    el?.addEventListener("change", recalc);
+    el?.addEventListener("blur", ()=>{ if(el.value!=="") el.value=asIntStr(el.value); recalc(); });
+  });
+
+  // form guard
+  document.querySelector("form").addEventListener("submit",(e)=>{
+    if(!checkIn.value || !checkOut.value){
+      e.preventDefault(); return alert("Please select check-in and check-out dates.");
+    }
+    if(!roomSelect.value){
+      e.preventDefault(); return alert("Please select a room.");
+    }
+    if(!validateBusiness()){
+      e.preventDefault();
+    }
+  });
+
+  // initial
+  if (nightlyRate) nightlyRate.value = asIntStr(nightlyRate.value || 0);
+  recalc();
+
+  // status badge (edit only)
+  function updateStatusBadge() {
+    const sel = document.getElementById("id_status");
+    const badge = document.getElementById("statusBadge");
+    if (!sel || !badge) return;
+    const v = sel.value || "";
+    const map = {
+      "RESERVED":   { text: "Reserved",   cls: "bg-info" },
+      "CHECKED_IN": { text: "Checked In", cls: "bg-success" },
+      "CHECKED_OUT":{ text: "Checked Out",cls: "bg-secondary" },
+      "CANCELLED":  { text: "Cancelled",  cls: "bg-danger" },
+    };
+    const m = map[v] || { text: "—", cls: "bg-light text-muted" };
+    badge.className = "badge " + m.cls;
+    badge.textContent = m.text;
+  }
+  document.addEventListener("DOMContentLoaded", updateStatusBadge);
+  document.getElementById("id_status")?.addEventListener("change", updateStatusBadge);
+</script>
+{% endblock %}

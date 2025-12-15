@@ -1,0 +1,227 @@
+{% extends 'accounts/dashboard.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block content %}
+<h2 class="mb-4">Site Settings</h2>
+
+<!-- SiteSettings form -->
+<form method="POST" class="mb-5">
+  {% csrf_token %}
+  <div class="container">
+    <div class="row g-3">
+      <!-- Row 1: name, title -->
+      <div class="col-md-4">
+        <label for="id_name" class="form-label">Site Name</label>
+        {{ form.name }}
+      </div>
+      <div class="col-md-4">
+        <label for="id_title" class="form-label">Site Title</label>
+        {{ form.title }}
+      </div>
+
+      <!-- Row 2: phone, address -->
+      <div class="col-md-4">
+        <label for="id_phone" class="form-label">Phone</label>
+        {{ form.phone }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_address" class="form-label">Address</label>
+        {{ form.address }}
+      </div>
+
+      <!-- Row 3: email, footer -->
+      <div class="col-md-6">
+        <label for="id_email" class="form-label">Email</label>
+        {{ form.email }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_footer" class="form-label">Footer Text</label>
+        {{ form.footer }}
+      </div>
+
+      <!-- Row 4: footer description, logo -->
+      <div class="col-md-6">
+        <label for="id_footer_description" class="form-label">Footer Description</label>
+        {{ form.footer_description }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_logo" class="form-label">Logo</label>
+        {{ form.logo }}
+      </div>
+
+      <!-- Row 5: favicon, carousel_1 -->
+      <div class="col-md-6">
+        <label for="id_favicon" class="form-label">Favicon</label>
+        {{ form.favicon }}
+      </div>
+      
+      <div class="col-md-6">
+        <label for="id_carousel_1" class="form-label">Carousel 1 Image</label>
+        {{ form.carousel_1 }}
+      </div>
+
+      <!-- Row 6: carousel_1_heading, carousel_1_text, carousel_1_button_link -->
+      
+      <div class="col-md-6">
+        <label for="id_carousel_1_heading" class="form-label">Carousel 1 Heading</label>
+        {{ form.carousel_1_heading }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_1_text" class="form-label">Carousel 1 Text</label>
+        {{ form.carousel_1_text }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_1_button_link" class="form-label">Carousel 1 Button Link</label>
+        {{ form.carousel_1_button_link }}
+      </div>
+
+      <!-- Row 7: carousel_2_heading, carousel_2_text, carousel_2_button_link -->
+      <div class="col-md-6">
+        <label for="id_carousel_2" class="form-label">Carousel 2 Image</label>
+        {{ form.carousel_2 }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_2_heading" class="form-label">Carousel 2 Heading</label>
+        {{ form.carousel_2_heading }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_2_text" class="form-label">Carousel 2 Text</label>
+        {{ form.carousel_2_text }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_2_button_link" class="form-label">Carousel 2 Button Link</label>
+        {{ form.carousel_2_button_link }}
+      </div>
+
+      <!-- Row 8: carousel_3_heading, carousel_3_text, carousel_3_button_link -->
+      <div class="col-md-6">
+        <label for="id_carousel_3" class="form-label">Carousel 3 Image</label>
+        {{ form.carousel_3 }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_3_heading" class="form-label">Carousel 3 Heading</label>
+        {{ form.carousel_3_heading }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_3_text" class="form-label">Carousel 3 Text</label>
+        {{ form.carousel_3_text }}
+      </div>
+      <div class="col-md-6">
+        <label for="id_carousel_3_button_link" class="form-label">Carousel 3 Button Link</label>
+        {{ form.carousel_3_button_link }}
+      </div>
+
+      <!-- Row 9: Social Links -->
+      <div class="col-md-3">
+        <label for="id_facebook" class="form-label">Facebook</label>
+        {{ form.facebook }}
+      </div>
+      <div class="col-md-3">
+        <label for="id_instagram" class="form-label">Instagram</label>
+        {{ form.instagram }}
+      </div>
+      <div class="col-md-3">
+        <label for="id_youtube" class="form-label">YouTube</label>
+        {{ form.youtube }}
+      </div>
+      <div class="col-md-3">
+        <label for="id_x" class="form-label">X</label>
+        {{ form.x }}
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      <button type="submit" name="save_settings" class="btn btn-primary px-5">Save Settings</button>
+    </div>
+  </div>
+</form>
+
+<hr class="my-5">
+
+<!-- Media Upload Sections -->
+<div class="container">
+  <div class="row g-4">
+    <!-- Logo -->
+    <div class="col-md-6 col-lg-4 d-flex flex-column align-items-center">
+      <h4>Logo</h4>
+      {% if settings.logo %}
+        <img src="{{ settings.logo.image.url }}" alt="Logo" class="img-fluid mb-3" style="max-height: 100px;">
+      {% else %}
+        <p>No logo uploaded.</p>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data" class="w-100" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="category" value="logo" />
+        <input type="file" name="image" required class="form-control mb-2">
+        <button type="submit" name="upload_media" class="btn btn-secondary w-100">Upload Logo</button>
+      </form>
+    </div>
+
+    <!-- Favicon -->
+    <div class="col-md-6 col-lg-4 d-flex flex-column align-items-center">
+      <h4>Favicon</h4>
+      {% if settings.favicon %}
+        <img src="{{ settings.favicon.image.url }}" alt="Favicon" class="img-fluid mb-3" style="max-height: 50px;">
+      {% else %}
+        <p>No favicon uploaded.</p>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data" class="w-100" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="category" value="favicon" />
+        <input type="file" name="image" required class="form-control mb-2">
+        <button type="submit" name="upload_media" class="btn btn-secondary w-100">Upload Favicon</button>
+      </form>
+    </div>
+
+    <!-- Carousel 1 -->
+    <div class="col-md-6 col-lg-4 d-flex flex-column align-items-center">
+      <h4>Carousel 1</h4>
+      {% if settings.carousel_1 and settings.carousel_1.image %}
+        <img src="{{ settings.carousel_1.image.url }}" alt="Carousel 1" class="img-fluid mb-3" style="max-height: 100px;">
+      {% else %}
+        <p>No image uploaded.</p>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data" class="w-100" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="category" value="carousel_1" />
+        <input type="file" name="image" required class="form-control mb-2">
+        <button type="submit" name="upload_media" class="btn btn-secondary w-100">Upload Carousel 1</button>
+      </form>
+    </div>
+
+    <!-- Carousel 2 -->
+    <div class="col-md-6 col-lg-4 d-flex flex-column align-items-center">
+      <h4>Carousel 2</h4>
+      {% if settings.carousel_2 and settings.carousel_2.image %}
+        <img src="{{ settings.carousel_2.image.url }}" alt="Carousel 2" class="img-fluid mb-3" style="max-height: 100px;">
+      {% else %}
+        <p>No image uploaded.</p>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data" class="w-100" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="category" value="carousel_2" />
+        <input type="file" name="image" required class="form-control mb-2">
+        <button type="submit" name="upload_media" class="btn btn-secondary w-100">Upload Carousel 2</button>
+      </form>
+    </div>
+
+    <!-- Carousel 3 -->
+    <div class="col-md-6 col-lg-4 d-flex flex-column align-items-center">
+      <h4>Carousel 3</h4>
+      {% if settings.carousel_3 and settings.carousel_3.image %}
+        <img src="{{ settings.carousel_3.image.url }}" alt="Carousel 3" class="img-fluid mb-3" style="max-height: 100px;">
+      {% else %}
+        <p>No image uploaded.</p>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data" class="w-100" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="category" value="carousel_3" />
+        <input type="file" name="image" required class="form-control mb-2">
+        <button type="submit" name="upload_media" class="btn btn-secondary w-100">Upload Carousel 3</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

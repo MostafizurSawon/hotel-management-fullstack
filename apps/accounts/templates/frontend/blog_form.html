@@ -1,0 +1,40 @@
+{% extends 'dashboard/admin_d.html' %}
+{% block admin-content %}
+  <div class="my-5 py-4"></div>
+  <div class="container">
+    <h2>{{ title }}</h2>
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      {{ form.title.label_tag }}
+      {{ form.title }}
+      {{ form.title.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.content.label_tag }}
+      {{ form.content }}
+      {{ form.content.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.image.label_tag }}
+      {{ form.image }}
+      {{ form.image.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.pdf_file.label_tag }}
+      {{ form.pdf_file }}
+      {{ form.pdf_file.errors }}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'blog_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+
+  </div>
+
+{% endblock admin-content %}

@@ -1,0 +1,26 @@
+{% extends layout_path %}
+{% load humanize %}
+{% block title %}Guest Summary{% endblock %}
+{% block content %}
+<h4 class="mb-3">{{ page_title }}</h4>
+<div class="alert alert-info">Total New Guests: <strong>{{ total_guests }}</strong></div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-striped mb-0">
+      <thead class="table-light"><tr><th>#</th><th>Name</th><th>Phone</th><th>Email</th></tr></thead>
+      <tbody>
+        {% for g in guests %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ g.full_name }}</td>
+            <td>{{ g.phone_number|default:"—" }}</td>
+            <td>{{ g.email|default:"—" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-3">No guests found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

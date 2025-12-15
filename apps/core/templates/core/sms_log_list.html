@@ -1,0 +1,124 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}SMS Logs{% endblock %}
+
+{% block content %}
+<div class="">
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0">{{ page_title }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{% url 'sms_log_export' %}{% if preserved_qs %}?{{ preserved_qs }}{% endif %}"
+         class="btn btn-outline-primary">
+        <i class="ti ti-download icon-sm me-1"></i> Export CSV
+      </a>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label mb-1">Search</label>
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="To / Body / Result / Context">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All</option>
+            <option value="SENT" {% if status == "SENT" %}selected{% endif %}>SENT</option>
+            <option value="OK" {% if status == "OK" %}selected{% endif %}>OK</option>
+            <option value="FAIL" {% if status == "FAIL" %}selected{% endif %}>FAIL</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1">Date From</label>
+          <input type="date" name="from" value="{{ request.GET.from }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1">Date To</label>
+          <input type="date" name="to" value="{{ request.GET.to }}" class="form-control">
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button class="btn btn-primary">
+            <i class="ti ti-filter me-1"></i> Filter
+          </button>
+          <a href="{% url 'sms_log_list' %}" class="btn btn-outline-secondary">
+            <i class="ti ti-rotate-ccw me-1"></i> Reset
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-striped align-middle mb-0">
+        <thead class="table-light sticky-top shadow-sm">
+          <tr>
+            <th style="width:70px;">#</th>
+            <th>To</th>
+            <th>Context</th>
+            <th>Result</th>
+            <th>Body</th>
+            <th>Provider</th>
+            <th>Booking</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in logs %}
+          <tr>
+            <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+            <td class="fw-semibold">{{ r.to }}</td>
+            <td><span class="badge bg-secondary-subtle text-secondary">{{ r.context }}</span></td>
+            <td>
+              {% if r.result|default:''|upper|slice:":4" == "SENT" or r.result|default:''|upper == "OK" %}
+                <span class="badge bg-success-subtle text-success">{{ r.result }}</span>
+              {% else %}
+                <span class="badge bg-danger-subtle text-danger">{{ r.result }}</span>
+              {% endif %}
+            </td>
+            <td style="max-width:520px;">
+              <div class="" title="{{ r.body }}">{{ r.body }}</div>
+            </td>
+            <td>{{ r.provider|default:"" }}</td>
+            <td>{{ r.booking_id|default:"" }}</td>
+            <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-3">No SMS logs found</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if is_paginated %}
+  <nav class="mt-3">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if preserved_qs %}&{{ preserved_qs }}{% endif %}">«</a></li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">«</span></li>
+      {% endif %}
+
+      {% for i in paginator.page_range %}
+        {% if page_obj.number == i %}
+          <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% else %}
+          <li class="page-item"><a class="page-link" href="?page={{ i }}{% if preserved_qs %}&{{ preserved_qs }}{% endif %}">{{ i }}</a></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if preserved_qs %}&{{ preserved_qs }}{% endif %}">»</a></li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">»</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

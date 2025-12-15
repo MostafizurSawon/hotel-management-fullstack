@@ -1,0 +1,71 @@
+{
+  "menu": [
+    {
+      "url": "index",
+      "icon": "menu-icon tf-icons ti ti-layout-dashboard",
+      "name": "Dashboard",
+      "slug": "index"
+    },
+    {
+      "url": "create",
+      "icon": "menu-icon tf-icons ti ti-user-plus",
+      "name": "Add Guest",
+      "slug": "create"
+    },
+    {
+      "url": "list",
+      "icon": "menu-icon tf-icons ti ti-users",
+      "name": "Guest List",
+      "slug": "list"
+    },
+    {
+      "url": "booking_create",
+      "icon": "menu-icon tf-icons ti ti-calendar-plus",
+      "name": "Book Room",
+      "slug": "booking_create"
+    },
+    {
+      "url": "booking_list",
+      "icon": "menu-icon tf-icons ti ti-calendar-check",
+      "name": "Booking List",
+      "slug": "booking_list"
+    },
+    {
+      "url": "payment_list",
+      "icon": "menu-icon tf-icons ti ti-cash",
+      "name": "Payment List",
+      "slug": "payment_list"
+    },
+    {
+      "url": "room_overview",
+      "icon": "menu-icon tf-icons ti ti-bed",
+      "name": "Room Overview",
+      "slug": "room_overview"
+    },
+    {
+      "url": "room_list",
+      "icon": "menu-icon tf-icons ti ti-home-plus",
+      "name": "Add Room",
+      "slug": "room_list"
+    },
+    {
+      "url": "report_summary",
+      "icon": "menu-icon tf-icons ti ti-chart-bar",
+      "name": "Reports",
+      "slug": "report_summary"
+    },
+    {
+      "url": "sms_log_list",
+      "icon": "menu-icon tf-icons ti ti-message-dots",
+      "name": "SMS Log",
+      "slug": "sms_log_list"
+    },
+    { "menu_header": "—— General Settings ——" },
+    {
+      "url": "site_settings",
+      "icon": "menu-icon tf-icons ti ti-settings",
+      "name": "Hotel Settings",
+      "slug": "site_settings"
+    }
+  ]
+}

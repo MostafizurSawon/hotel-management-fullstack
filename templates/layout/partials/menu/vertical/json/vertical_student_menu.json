@@ -1,0 +1,106 @@
+{
+  "menu": [
+    {
+      "url": "index",
+      "icon": "menu-icon tf-icons ti ti-home",
+      "name": "Dashboard",
+      "slug": "index"
+    },
+    {
+      "name": "HSC Admissions",
+      "icon": "menu-icon tf-icons ti ti-school",
+      "slug": "admission",
+      "submenu": [
+        {
+          "url": "my_form",
+          "name": "My Admission Form",
+          "slug": "my_form"
+        },
+        {
+          "url": "hsc_admission_create",
+          "name": "Science Form",
+          "slug": "hsc_admission_create"
+        },
+        {
+          "url": "hsc_admission_create_arts",
+          "name": "Humanities Form",
+          "slug": "hsc_admission_create_arts"
+        },
+        {
+          "url": "hsc_admission_create_commerce",
+          "name": "Business Studies Form",
+          "slug": "hsc_admission_create_commerce"
+        }
+      ]
+    },
+    {
+      "name": "Degree Admissions",
+      "icon": "menu-icon tf-icons ti ti-file-text",
+      "slug": "admission",
+      "submenu": [
+        {
+          "url": "my_degree_form",
+          "name": "My Degree Form",
+          "slug": "my_degree_form"
+        },
+        {
+          "url": "ba_admission_create",
+          "name": "BA Form",
+          "slug": "ba_admission_create"
+        },
+        {
+          "url": "bss_admission_create",
+          "name": "BSS Form",
+          "slug": "bss_admission_create"
+        },
+        {
+          "url": "bsc_admission_create",
+          "name": "BSC Form",
+          "slug": "bsc_admission_create"
+        }
+      ]
+    },
+    {
+      "name": "Fees and Payment",
+      "icon": "menu-icon tf-icons ti ti-receipt-2",
+      "slug": "academy",
+      "submenu": [
+        {
+          "url": "student_admission_pdf",
+          "name": "My Payment",
+          "slug": "student_admission_pdf"
+        }
+      ]
+    },
+    {
+      "name": "Exams",
+      "icon": "menu-icon tf-icons ti ti-file-check",
+      "slug": "academy",
+      "submenu": [
+      {
+        "url": "p1",
+        "name": "My Marksheet",
+        "slug": "admitted_students_list"
+      },
+      {
+      "name": "Admit Card",
+      "icon": "menu-icon tf-icons ti ti-school",
+      "slug": "marks",
+      "submenu": [
+        {
+          "url": "exam2",
+          "name": "Admit Card (Front)",
+          "slug": "exam2"
+        },
+        {
+          "url": "exam3",
+          "name": "Admit Card (Back)",
+          "slug": "exam3"
+        }
+        ]
+      }
+
+      ]
+    }
+  ]
+}

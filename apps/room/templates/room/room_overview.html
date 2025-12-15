@@ -1,0 +1,196 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Room Overview & Calendar{% endblock %}
+{% block content %}
+<div class="">
+  <h4 class="mb-3">{{ page_title }}</h4>
+
+  <ul class="nav nav-tabs" id="roomTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabOverview">Overview</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabCalendar">Calendar</a></li>
+  </ul>
+
+  <div class="tab-content border-start border-end border-bottom p-3 card">
+    <!-- 🟩 OVERVIEW TAB -->
+    <div class="tab-pane fade show active" id="tabOverview">
+      <div class="row g-2 align-items-end mb-2">
+        <div class="col-md-3"><input type="date" id="f_in" value="{{ cin }}" class="form-control"></div>
+        <div class="col-md-3"><input type="date" id="f_out" value="{{ cout }}" class="form-control"></div>
+        <div class="col-md-3"><input type="text" id="f_q" class="form-control" placeholder="Room / Category"></div>
+        <div class="col-md-2">
+          <select id="f_status" class="form-select">
+            <option value="">All</option><option value="available">Available</option><option value="booked">Booked</option>
+          </select>
+        </div>
+        <div class="col-md-1 d-grid"><button id="btnFilter" class="btn btn-primary">Filter</button></div>
+      </div>
+      <table class="table table-striped align-middle">
+        <thead class="table-light"><tr>
+          <th>Room</th><th>Category</th><th class="text-end">Rate</th><th>Status</th><th>Booked Window</th><th>Guest</th><th>Next Free</th>
+        </tr></thead>
+        <tbody id="roomsTbody">
+          {% for r in initial_rows %}
+          <tr class="{% if r.is_booked %}table-danger{% else %}table-success-subtle{% endif %}">
+            <td class="fw-semibold">{{ r.room }}</td>
+            <td>{{ r.category }}</td>
+            <td class="text-end">৳{{ r.rate }}</td>
+            <td>{% if r.is_booked %}<span class="badge bg-danger">Booked</span>{% else %}<span class="badge bg-success">Available</span>{% endif %}</td>
+            <td class="text-muted">{{ r.booked_label }}</td>
+            <td class="text-muted">{{ r.guest }}</td>
+            <td>{{ r.next_free }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 🟦 CALENDAR TAB -->
+    <div class="tab-pane fade" id="tabCalendar">
+      <div class="row g-2 align-items-end mb-2">
+        <div class="col-md-4">
+          <select id="roomSel" class="form-select">
+            <option value="">Select Room</option>
+            {% for r in rooms %}
+              <option value="{{ r.id }}">{{ r.room_number }}{% if r.category %} — {{ r.category.name }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4"><input id="monthSel" type="month" class="form-control"></div>
+        <div class="col-md-2 d-grid"><button id="btnLoad" class="btn btn-primary">Load</button></div>
+        <div class="col-md-2 d-grid"><button id="btnReset" class="btn btn-outline-secondary">Reset</button></div>
+      </div>
+      <div id="calendarContainer" class="border rounded p-3 text-center text-muted">Select a room to view calendar</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// tiny helper
+const $ = (id) => document.getElementById(id);
+
+/* ========== OVERVIEW (auto refresh) ========== */
+async function loadRooms(){
+  const params = new URLSearchParams({
+    in:   $('f_in').value || '',
+    out:  $('f_out').value || '',
+    q:    $('f_q').value || '',
+    status: $('f_status').value || '',
+  });
+  const url = "{% url 'api_rooms_overview' %}?" + params.toString();
+  const tb  = $('roomsTbody');
+
+  tb.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-muted">Loading…</td></tr>`;
+  try {
+    const r = await fetch(url);
+    const j = await r.json();
+    const rows = (j.results || []).map(r => `
+      <tr class="${r.is_booked ? 'table-danger' : 'table-success-subtle'}">
+        <td class="fw-semibold">${r.room}</td>
+        <td>${r.category || '—'}</td>
+        <td class="text-end">৳ ${r.rate}</td>
+        <td>${r.is_booked ? '<span class="badge bg-danger">Booked</span>' : '<span class="badge bg-success">Available</span>'}</td>
+        <td class="text-muted">${r.booked_label || ''}</td>
+        <td class="text-muted">${r.guest || ''}</td>
+        <td>${r.next_free || ''}</td>
+      </tr>
+    `).join('');
+    tb.innerHTML = rows || `<tr><td colspan="7" class="text-center py-3 text-muted">No rooms found</td></tr>`;
+  } catch(e){
+    tb.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-danger">Failed to load.</td></tr>`;
+  }
+}
+
+// Auto-refresh on change (no need to click Filter)
+['f_in','f_out','f_status'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('change', loadRooms);
+});
+
+// Search: press Enter to apply, or small debounce on typing
+(function(){
+  const iq = $('f_q');
+  if (!iq) return;
+  let t = null;
+  iq.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') return loadRooms();
+    clearTimeout(t);
+    t = setTimeout(loadRooms, 300);
+  });
+})();
+
+// Still keep the Filter button for mouse users
+$('btnFilter')?.addEventListener('click', loadRooms);
+
+/* ========== CALENDAR (room/month → Load/Reset) ========== */
+$('btnLoad')?.addEventListener('click', async () => {
+  const rid = $('roomSel')?.value;
+  const ym  = $('monthSel')?.value;   // yyyy-mm
+  const box = $('calendarContainer');
+  if (!rid) { box.innerHTML = 'Select a room first.'; return; }
+
+  const url = "{% url 'api_room_calendar' %}?" + new URLSearchParams({
+    room: rid,
+    ...(ym ? { ym } : {})
+  }).toString();
+
+  box.innerHTML = 'Loading…';
+  try {
+    const r = await fetch(url);
+    const j = await r.json();
+    const start = new Date(j.month_start);
+    const end   = new Date(j.month_end);
+
+    // collect booked day strings yyyy-mm-dd
+    const booked = new Set();
+    (j.events || []).forEach(ev => {
+      const s = new Date(ev.start), e = new Date(ev.end);
+      for (let d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
+        booked.add(d.toISOString().slice(0,10));
+      }
+    });
+
+    // build day grid
+    const days = [];
+    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+      days.push(new Date(d));
+    }
+
+    let html = `<div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="fw-semibold">${start.toLocaleString('default',{month:'long',year:'numeric'})}</div>
+                  <div class="small">
+                    <span class="badge bg-success-subtle text-success me-2">Available</span>
+                    <span class="badge bg-danger-subtle text-danger">Booked</span>
+                  </div>
+                </div>
+                <div class="d-grid" style="grid-template-columns:repeat(7,1fr);gap:6px">`;
+    days.forEach(d => {
+      const key = d.toISOString().slice(0,10);
+      const bookedCls = booked.has(key) ? 'bg-danger-subtle border-danger-subtle' : 'bg-success-subtle border-success-subtle';
+      html += `<div class="border rounded text-center py-2 ${bookedCls}">
+                 <div class="fw-semibold">${d.getDate()}</div>
+               </div>`;
+    });
+    html += `</div>`;
+
+    box.innerHTML = html;
+  } catch(e){
+    box.innerHTML = '<span class="text-danger">Failed to load calendar.</span>';
+  }
+});
+
+// Optional: auto-load when room/month changes (no button needed)
+['roomSel','monthSel'].forEach(id => {
+  $(id)?.addEventListener('change', () => $('btnLoad')?.click());
+});
+
+// Reset calendar panel
+$('btnReset')?.addEventListener('click', () => {
+  if ($('roomSel'))  $('roomSel').value  = '';
+  if ($('monthSel')) $('monthSel').value = '';
+  $('calendarContainer').innerHTML = 'Select a room to view calendar';
+});
+
+// initial overview draw
+document.addEventListener('DOMContentLoaded', loadRooms);
+</script>
+{% endblock %}

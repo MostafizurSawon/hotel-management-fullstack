@@ -1,0 +1,486 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}Add / Edit Booking{% endblock %}
+
+{% block content %}
+<div class="">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">{{ page_title }}</h4>
+    <div>
+      <a href="{% url 'create' %}" class="btn btn-primary">
+        <i data-lucide="user-plus" class="me-1"></i> Add Guest
+      </a>
+      <a href="{% url 'booking_list' %}" class="btn btn-outline-primary">
+        <i data-lucide="user" class="ti ti-arrow-left me-1"></i> Booking List
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+
+          <!-- Guest -->
+          <div class="col-md-4 position-relative">
+            <label class="form-label">Guest</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="ti ti-search icon-sm"></i></span>
+              <input type="text" id="guestSearch" class="form-control" placeholder="Search by name / phone / email" autocomplete="off">
+            </div>
+            <div id="guestSuggest" class="list-group shadow-sm"
+                 style="position:absolute; left:0; right:0; top:calc(100% + 4px);
+                        display:none; z-index:1080; max-height:260px; overflow:auto;
+                        background:var(--bs-body-bg); border:1px solid var(--bs-border-color);
+                        border-radius:.5rem;"></div>
+            <div class="mt-1">
+              {{ form.guest }}
+              {% if form.guest.errors %}
+                <div class="invalid-feedback d-block">{{ form.guest.errors|striptags }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Check In / Out -->
+          <div class="col-md-4">
+            <label class="form-label">Check In *</label>
+            {{ form.check_in }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Check Out *</label>
+            {{ form.check_out }}
+          </div>
+
+          <!-- Room -->
+          <div class="col-md-4">
+            <label class="form-label">Select Room</label>
+
+            {% if room_options and room_options|length %}
+              <select name="room" id="roomSelect" class="form-select">
+                <option value="">Select Room</option>
+                {% for item in room_options %}
+                  <option value="{{ item.id }}" data-rate="{{ item.rate }}"
+                    {% if form.instance.room_id == item.id or form.data.room == item.id|stringformat:"s" %}selected{% endif %}>
+                    {{ item.label }}
+                  </option>
+                {% endfor %}
+              </select>
+            {% else %}
+              {{ form.room }}
+            {% endif %}
+
+            <div class="form-text" id="availabilityMsg"></div>
+            {% if form.room.errors %}
+              <div class="invalid-feedback d-block">{{ form.room.errors|striptags }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Rent -->
+          <div class="col-md-4">
+            <label class="form-label">Room Rent</label>
+            {{ form.nightly_rate }}
+          </div>
+
+          <!-- Totals -->
+          <div class="col-md-2">
+            <label class="form-label">Days</label>
+            <input id="nights" class="form-control" value="0" readonly>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Total Amount</label>
+            <input id="grossAmount" class="form-control" value="0" readonly>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Discount Amount</label>
+            {{ form.discount_amount }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Net Amount</label>
+            <input id="netAmount" class="form-control" value="0" readonly>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Payment Amount</label>
+            {{ form.payment_amount }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Due</label>
+            <input id="dueAmount" class="form-control" value="0" readonly>
+          </div>
+
+          <!-- Extra -->
+          <div class="col-md-3">
+            <label class="form-label">Extra </label>
+            {{ form.extra_amount }}
+            {% if form.extra_amount.errors %}
+              <div class="invalid-feedback d-block">{{ form.extra_amount.errors|striptags }}</div>
+            {% endif %}
+            <div class="form-text">Any extra charges added to gross (BDT).</div>
+          </div>
+
+          <!-- Notes -->
+          <div class="col-md-12 mt-2">
+            <label class="form-label">Notes</label>
+            {{ form.notes }}
+          </div>
+
+          <!-- Status (optional show) -->
+{% comment %}
+          <div class="col-md-4 mt-2">
+            <label class="form-label d-flex align-items-center gap-2">
+              Status <span id="statusBadge" class="badge">—</span>
+            </label>
+            {{ form.status }}
+            <div class="form-text">Changing status will reflect immediately in reports.</div>
+          </div> {% endcomment %}
+
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            {% if is_edit %}
+              <i class="ti ti-check icon-sm me-1"></i> Update Booking
+            {% else %}
+              <i class="ti ti-plus icon-sm me-1"></i> Add New Booking
+            {% endif %}
+          </button>
+          <a href="{% url 'booking_create' %}" class="btn btn-light">
+            <i class="ti ti-refresh icon-sm me-1"></i> Reset
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .icon-sm { font-size:1rem; line-height:1; }
+  .toast { min-width:280px; z-index:2000; box-shadow:0 0.5rem 1rem rgba(0,0,0,.15); }
+  .is-invalid { border-color: var(--bs-danger) !important; }
+  /* disabled options visual */
+  #roomSelect option[disabled] { color:#999; background:#f8f8f8; }
+</style>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(a => new bootstrap.Alert(a).close());
+  }, 3000);
+  lucide.createIcons();
+</script>
+
+<script>
+  // ---------- GLOBAL BOOKING CONTEXT ----------
+  const CURRENT_BOOKING_ID = {{ booking_id|default:"null" }};
+  const CURRENT_ROOM_ID  = "{{ form.instance.room_id|default_if_none:'' }}";
+
+  // ---------- HELPERS ----------
+  const qi = n => Math.max(0, Math.round(parseFloat(n)||0));
+  const asIntStr = n => String(qi(n));
+
+  // robust date parser that accepts DD-MM-YYYY and YYYY-MM-DD and safe fallback
+  function parseDateString(s){
+    if(!s) return null;
+    const iso = /^\d{4}-\d{2}-\d{2}$/;
+    const dmy = /^\d{2}-\d{2}-\d{4}$/;
+    if (iso.test(s)){
+      const [y,m,d] = s.split('-').map(Number);
+      return new Date(y, m-1, d);
+    }
+    if (dmy.test(s)){
+      const [d,m,y] = s.split('-').map(Number);
+      return new Date(y, m-1, d);
+    }
+    const dt = new Date(s); // fallback to Date parsing
+    return isNaN(dt) ? null : dt;
+  }
+
+  // format Date object to ISO YYYY-MM-DD (returns null if input invalid)
+  function formatDateToISOString(s){
+    const d = (s instanceof Date) ? s : parseDateString(s);
+    if(!d) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // daySpanInclusive uses the robust parser above
+  const daySpanInclusive = (a,b) => {
+    if(!a || !b) return 0;
+    const d1 = parseDateString(a);
+    const d2 = parseDateString(b);
+    if(!d1 || !d2) return 0;
+    if(d2 < d1) return 0;
+    const MS = 24 * 60 * 60 * 1000;
+    return Math.floor((d2 - d1) / MS) + 1;
+  };
+
+  // ---------- FIELD REFERENCES (robust to both custom & Django default IDs) ----------
+  const roomSelect   = document.getElementById("roomSelect") || document.getElementById("id_room");
+  const checkIn      = document.getElementById("checkIn")      || document.getElementById("id_check_in");
+  const checkOut     = document.getElementById("checkOut")     || document.getElementById("id_check_out");
+  const nightlyRate  = document.getElementById("nightlyRate")  || document.getElementById("id_nightly_rate");
+  const extraEl      = document.getElementById("extraAmount")  || document.getElementById("id_extra_amount"); // NEW
+  const discountEl   = document.getElementById("discountAmount") || document.getElementById("id_discount_amount");
+  const paymentEl    = document.getElementById("paymentAmount")  || document.getElementById("id_payment_amount");
+  const nightsEl     = document.getElementById("nights");
+  const grossEl      = document.getElementById("grossAmount");
+  const netEl        = document.getElementById("netAmount");
+  const dueEl        = document.getElementById("dueAmount");
+  const guestSearch  = document.getElementById("guestSearch");
+  const guestSuggest = document.getElementById("guestSuggest");
+  const guestSelect  = document.getElementById("id_guest");
+  const availabilityMsg = document.getElementById("availabilityMsg");
+  const submitBtn    = document.querySelector("button[type='submit']");
+
+  // ---------- TOAST ----------
+  function showToast(msg,type="info"){
+    const color = type==="error" ? "danger" : (type==="success" ? "success" : "info");
+    const t = document.createElement("div");
+    t.className = `toast align-items-center text-bg-${color} border-0 position-fixed bottom-0 end-0 m-3 show`;
+    t.innerHTML = `<div class='d-flex'><div class='toast-body'>${msg}</div>
+      <button type='button' class='btn-close btn-close-white me-2 m-auto' data-bs-dismiss='toast'></button></div>`;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), 3000);
+  }
+
+  // ---------- RECALC ----------
+  function recalc(){
+    const days = daySpanInclusive(checkIn?.value, checkOut?.value);
+    if (nightsEl) nightsEl.value = asIntStr(days);
+
+    // nights to charge logic (your existing business rule)
+    let nightsToCharge = 0;
+    if (days > 0) nightsToCharge = Math.max(days - 1, 1);
+
+    // values
+    const rate  = qi(nightlyRate?.value);
+    const extra = qi(extraEl?.value);               // include extra
+    const gross = qi(nightsToCharge * rate) + extra;
+    if (grossEl) grossEl.value = asIntStr(gross);
+
+    const discount = Math.max(0, Math.min(qi(discountEl?.value), gross));
+    if (discountEl) discountEl.value = asIntStr(discount);
+
+    const net = Math.max(gross - discount, 0);
+    if (netEl) netEl.value = asIntStr(net);
+
+    const payment = Math.max(0, Math.min(qi(paymentEl?.value), net));
+    if (paymentEl) paymentEl.value = asIntStr(payment);
+
+    const due = Math.max(net - payment, 0);
+    if (dueEl) dueEl.value = asIntStr(due);
+
+    // availability check (send ISO dates where possible)
+    if(roomSelect?.value && checkIn?.value && checkOut?.value){
+      const isoIn = formatDateToISOString(checkIn.value);
+      const isoOut = formatDateToISOString(checkOut.value);
+      checkAvailability(roomSelect.value, isoIn || checkIn.value, isoOut || checkOut.value);
+    }
+  }
+
+  // ---------- AVAILABILITY (message only for the currently selected room) ----------
+  async function checkAvailability(roomId, cin, cout){
+    if(!availabilityMsg) return;
+    availabilityMsg.textContent = "Checking availability…";
+    availabilityMsg.className = "form-text text-muted";
+    try{
+      const excludeParam = (typeof CURRENT_BOOKING_ID !== 'undefined' && CURRENT_BOOKING_ID) ? `&exclude=${CURRENT_BOOKING_ID}` : "";
+      const url = `{% url 'api_room_availability' %}?room=${encodeURIComponent(roomId)}&in=${encodeURIComponent(cin)}&out=${encodeURIComponent(cout)}${excludeParam}`;
+      const r = await fetch(url);
+      const j = await r.json();
+      if (j.available){
+        availabilityMsg.textContent = "Room is available for selected dates.";
+        availabilityMsg.className = "form-text text-success";
+      } else {
+        availabilityMsg.textContent = "❌ Room not available for selected dates.";
+        availabilityMsg.className = "form-text text-danger";
+      }
+    }catch(e){
+      availabilityMsg.textContent = "Could not check availability.";
+      availabilityMsg.className = "form-text text-warning";
+    }
+  }
+
+  // ---------- DISABLE BOOKED ROOMS (does NOT create/remove options) ----------
+  let markToken = 0;
+  async function markOptionsByAvailability(){
+    if(!roomSelect || !checkIn?.value || !checkOut?.value) return;
+
+    // need at least 2 options (placeholder + at least 1 room)
+    if (roomSelect.options.length <= 1) {
+      // No options provided by server; nothing to mark.
+      return;
+    }
+
+    const isoCin = formatDateToISOString(checkIn.value) || checkIn.value;
+    const isoCout = formatDateToISOString(checkOut.value) || checkOut.value;
+    const thisRun = ++markToken;
+
+    // cache original labels once
+    [...roomSelect.options].forEach(o=>{
+      if (o.value && !o.dataset.origLabel){
+        o.dataset.origLabel = o.textContent.trim();
+      }
+      if (o.value){
+        o.textContent = (o.dataset.origLabel || o.textContent.trim()) + " …checking";
+        o.disabled = false; // start as enabled; we'll disable booked ones below
+      }
+    });
+
+    const exclude = (typeof CURRENT_BOOKING_ID !== 'undefined' && CURRENT_BOOKING_ID) ? `&exclude=${CURRENT_BOOKING_ID}` : "";
+
+    // Check each room individually
+    for (const o of [...roomSelect.options]) {
+      if (!o.value) continue; // skip placeholder
+      const url = `{% url 'api_room_availability' %}?room=${encodeURIComponent(o.value)}&in=${encodeURIComponent(isoCin)}&out=${encodeURIComponent(isoCout)}${exclude}`;
+      try{
+        const res = await fetch(url);
+        const j = await res.json();
+        if (thisRun !== markToken) return; // a newer run started
+        const available = !!j.available;
+        o.disabled = !available;
+        const base = o.dataset.origLabel || o.textContent.trim();
+        o.textContent = available ? base : `${base} — (Booked)`;
+        o.title = available ? "Available" : "Booked for these dates";
+      }catch(e){
+        if (thisRun !== markToken) return;
+        const base = o.dataset.origLabel || o.textContent.trim();
+        o.disabled = false;
+        o.textContent = `${base} — (Error)`;
+        o.title = "Could not check availability";
+      }
+    }
+
+    // If current selection is now disabled, clear it
+    const sel = roomSelect.options[roomSelect.selectedIndex];
+    if (sel && sel.value && sel.disabled){
+      roomSelect.value = "";
+      showToast("Selected room is booked for these dates. Please choose another.","error");
+    }
+  }
+
+  // ---------- GUEST TYPEAHEAD ----------
+  let gsTimer = null;
+  function hideSuggest(){ if(!guestSuggest) return; guestSuggest.style.display="none"; guestSuggest.innerHTML=""; }
+  guestSearch?.addEventListener("input", ()=>{
+    const val = guestSearch.value.trim(); if(gsTimer) clearTimeout(gsTimer);
+    if(!val){ hideSuggest(); return; }
+    gsTimer = setTimeout(async ()=>{
+      try{
+        const res = await fetch(`{% url 'api_guest_search' %}?q=${encodeURIComponent(val)}`);
+        const j = await res.json();
+        const items = j.results||[];
+        if(!items.length){ hideSuggest(); return; }
+        guestSuggest.innerHTML = items.map(it=>`
+          <button type="button" class="list-group-item list-group-item-action"
+                  data-id="${it.id}" data-name="${it.name}">
+            ${it.label}
+          </button>`).join("");
+        guestSuggest.style.display = "block";
+      }catch(e){ hideSuggest(); }
+    }, 200);
+  });
+  guestSuggest?.addEventListener("click", (e)=>{
+    const b = e.target.closest("button[data-id]"); if(!b) return;
+    guestSelect.value = b.dataset.id;
+    guestSearch.value = b.dataset.name;
+    hideSuggest();
+  });
+  document.addEventListener("click", (e)=>{
+    if(!e.target.closest("#guestSuggest") && !e.target.closest("#guestSearch")) hideSuggest();
+  });
+
+  // ---------- EVENTS ----------
+  [checkIn,checkOut].forEach(el=>{
+    el?.addEventListener("change", ()=>{
+      recalc();
+      if(checkIn?.value && checkOut?.value){
+        markOptionsByAvailability(); // disable booked rooms
+        if(roomSelect?.value){
+          const isoIn = formatDateToISOString(checkIn.value) || checkIn.value;
+          const isoOut = formatDateToISOString(checkOut.value) || checkOut.value;
+          checkAvailability(roomSelect.value, isoIn, isoOut);
+        }
+      }
+    });
+  });
+
+  roomSelect?.addEventListener("change", ()=>{
+    const opt = roomSelect.options[roomSelect.selectedIndex];
+    if (nightlyRate) nightlyRate.value = asIntStr(opt?.dataset?.rate || "0");
+    recalc();
+    if(roomSelect.value && checkIn?.value && checkOut?.value){
+      const isoIn = formatDateToISOString(checkIn.value) || checkIn.value;
+      const isoOut = formatDateToISOString(checkOut.value) || checkOut.value;
+      checkAvailability(roomSelect.value, isoIn, isoOut);
+    }
+  });
+
+  // include extraEl in the same listener set as discount/payment
+  [discountEl, paymentEl, extraEl].forEach(el=>{
+    el?.addEventListener("input", recalc);
+    el?.addEventListener("change", recalc);
+    el?.addEventListener("blur", ()=>{ if(el && el.value!=="") el.value = asIntStr(el.value); recalc(); });
+  });
+
+  document.querySelector("form").addEventListener("submit", (e)=>{
+    if(!checkIn?.value || !checkOut?.value){
+      e.preventDefault(); showToast("Please select check-in and check-out dates.","error");
+      return;
+    }
+    const selOpt = roomSelect?.options[roomSelect.selectedIndex];
+    if(!roomSelect?.value || selOpt?.disabled){
+      e.preventDefault(); showToast("Please select an available room (not booked).","error");
+    }
+  });
+
+  // ---------- INIT ----------
+  document.addEventListener("DOMContentLoaded", ()=>{
+    // If server preselected a room, keep it
+    if(CURRENT_ROOM_ID && roomSelect){
+      const opt = [...roomSelect.options].find(o => o.value === CURRENT_ROOM_ID);
+      if(opt){ opt.selected = true; if(nightlyRate) nightlyRate.value = asIntStr(opt.dataset?.rate || "0"); }
+    }
+
+    // ensure extra input shows integer value formatting (if present)
+    if (extraEl && extraEl.value !== "") extraEl.value = asIntStr(extraEl.value);
+
+    // Only mark availability if we already have options in the DOM and dates present
+    if (roomSelect && roomSelect.options.length > 1 && checkIn?.value && checkOut?.value){
+      markOptionsByAvailability();
+    }
+    recalc();
+  });
+
+  // ---------- STATUS BADGE ----------
+  function updateStatusBadge(){
+    const sel = document.getElementById("id_status");
+    const badge = document.getElementById("statusBadge");
+    if(!sel || !badge) return;
+    const map = {
+      "RESERVED":    {text:"Reserved",   cls:"bg-info"},
+      "CHECKED_IN":  {text:"Checked In", cls:"bg-success"},
+      "CHECKED_OUT": {text:"Checked Out",cls:"bg-secondary"},
+      "CANCELLED":   {text:"Cancelled",  cls:"bg-danger"}
+    };
+    const m = map[sel.value] || {text:"—", cls:"bg-light text-muted"};
+    badge.className = "badge " + m.cls;
+    badge.textContent = m.text;
+  }
+  document.addEventListener("DOMContentLoaded", updateStatusBadge);
+  document.getElementById("id_status")?.addEventListener("change", updateStatusBadge);
+</script>
+{% endblock %}

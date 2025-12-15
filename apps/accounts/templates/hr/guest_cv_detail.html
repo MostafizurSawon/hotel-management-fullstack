@@ -1,0 +1,80 @@
+{% extends 'accounts/dashboard.html' %}
+{% block title %}Guest CV Detail - {{ cv.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Guest CV Detail: {{ cv.full_name }}</h2>
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-4 text-center">
+          {% if cv.profile_picture %}
+            <img src="{{ cv.profile_picture.url }}" alt="Profile Picture" class="img-fluid rounded" style="max-height: 200px;">
+          {% else %}
+            <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+              No Profile Picture
+            </div>
+          {% endif %}
+        </div>
+        <div class="col-md-8">
+          <h4>Basic Information</h4>
+          <p><strong>Full Name (English):</strong> {{ cv.full_name }}</p>
+          <p><strong>Full Name (Bangla):</strong> {{ cv.full_name_bn|default:"N/A" }}</p>
+          <p><strong>Email:</strong> {{ cv.email }}</p>
+          <p><strong>Phone Number:</strong> {{ cv.user.phone_number }}</p>
+          <p><strong>Date of Birth:</strong> {{ cv.date_of_birth }}</p>
+          <p><strong>Nationality:</strong> {{ cv.nationality }}</p>
+          <p><strong>Blood Group:</strong> {{ cv.blood_group }} {% if cv.blood_group == "Other" %} ({{ cv.blood_group_other }}){% endif %}</p>
+          <p><strong>Gender:</strong> {{ cv.gender }}</p>
+          <p><strong>Married:</strong> {{ cv.married }}</p>
+          <p><strong>Bio:</strong> {{ cv.bio|linebreaksbr|default:"No bio provided." }}</p>
+        </div>
+      </div>
+
+      <h4>Addresses</h4>
+      <p><strong>Current Address:</strong><br><pre>{{ cv.current_address }}</pre></p>
+      <p><strong>Permanent Address:</strong><br><pre>{{ cv.permanent_address }}</pre></p>
+      <p><strong>Permanent same as Current:</strong> {{ cv.is_permanent_same_as_current|yesno:"Yes,No" }}</p>
+
+      <h4>Family Information</h4>
+      <p><strong>Father's Name:</strong> {{ cv.fathers_name }}</p>
+      <p><strong>Father's Mobile:</strong> {{ cv.fathers_mobile }}</p>
+      <p><strong>Father's NID:</strong> {{ cv.fathers_nid }}</p>
+      <p><strong>Mother's Name:</strong> {{ cv.mothers_name }}</p>
+      <p><strong>Mother's Mobile:</strong> {{ cv.mothers_mobile }}</p>
+      <p><strong>Mother's NID:</strong> {{ cv.mothers_nid }}</p>
+
+      <h4>Education</h4>
+      <p><strong>Last Education:</strong> {{ cv.last_education }} {% if cv.last_education == "Others" %} ({{ cv.last_education_other }}) {% endif %}</p>
+      <p><strong>Result:</strong> {{ cv.last_education_result }}</p>
+      <p><strong>Passing Year:</strong> {{ cv.last_education_passing_year }}</p>
+
+      <h4>Job Information</h4>
+      <p><strong>Current Job Status:</strong> {{ cv.current_job_status }} {% if cv.current_job_status == "Others" %} ({{ cv.current_job_status_other }}) {% endif %}</p>
+      <p><strong>Current Job Title:</strong> {{ cv.current_job_title|default:"-" }}</p>
+
+      <h4>Languages</h4>
+      <p>
+        {% if cv.languages.exists %}
+          {{ cv.languages.all|join:", " }}
+        {% else %}
+          No languages listed.
+        {% endif %}
+        {% if cv.language_other %}
+          , {{ cv.language_other }}
+        {% endif %}
+      </p>
+
+      <small class="text-muted">
+        {{ cv.user.id }}
+        Created at: {{ cv.created_at|date:"F j, Y, g:i a" }}<br>
+        Updated at: {{ cv.updated_at|date:"F j, Y, g:i a" }}
+      </small>
+    </div>
+  </div>
+
+
+
+  <a href="{% url 'admin_guest_cvs_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %}

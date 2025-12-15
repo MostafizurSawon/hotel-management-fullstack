@@ -1,0 +1,23 @@
+{
+  "menu": [
+    {
+      "url": "index",
+      "icon": "menu-icon tf-icons ti ti-home",
+      "name": "Dashboard",
+      "slug": "index"
+    },
+    { "menu_header": "—— Receptionist Section ——" }
+    {% comment %} {
+      "url": "manage_appointments",
+      "icon": "menu-icon tf-icons ti ti-calendar-event",
+      "name": "Manage Appointments",
+      "slug": "manage_appointments"
+    },
+    {
+      "url": "visitor_log",
+      "icon": "menu-icon tf-icons ti ti-file-text",
+      "name": "Visitor Log",
+      "slug": "visitor_log"
+    } {% endcomment %}
+  ]
+}

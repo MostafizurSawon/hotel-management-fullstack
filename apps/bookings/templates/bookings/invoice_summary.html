@@ -1,0 +1,91 @@
+{% extends layout_path %}
+{% load humanize %}
+{% block title %}Booking Invoice #{{ booking.id }}{% endblock %}
+
+{% block content %}
+<style>
+  @media print { @page { size: 80mm auto; margin: 0; } body { margin: 0; } .no-print{display:none!important} .invoice-wrap{border:none} }
+  body{font-family:"Courier New",monospace;font-size:12px;color:#000;background:#fff}
+  .invoice-wrap{width:80mm;margin:0 auto;padding:6px 10px;border:1px dashed #000;background:#fff}
+  .text-center{text-align:center}.text-end{text-align:right}.fw-bold{font-weight:bold}
+  hr.dash{border:none;border-top:1px dashed #000;margin:4px 0}
+  table{width:100%;border-collapse:collapse} td,th{padding:2px 0;vertical-align:top}
+  .muted{color:#333;font-size:11px}
+</style>
+
+<div class="mt-4"></div>
+<div id="invoice-area" class="invoice-wrap">
+  <div class="text-center fw-bold" style="font-size:14px;">
+    {{ site_settings.name|default:"Hotel Hilton City" }}
+  </div>
+  <div class="text-center" style="font-size:11px; line-height:1.4;">
+    {{ site_settings.post|default:"Chowmuhoni Circle" }},
+    {{ site_settings.upozilla|default:"Agrabad" }},
+    {{ site_settings.district|default:"Chittagong" }}<br>
+    Phone: {{ site_settings.phone|default:"01844356222" }}
+  </div>
+  <hr class="dash">
+
+  <table>
+    <tr>
+      <td><strong>Booking #{{ booking.id }}</strong></td>
+      <td class="text-end">{{ booking.created_at|date:"d M Y, h:i A" }}</td>
+    </tr>
+  </table>
+
+  <hr class="dash">
+
+  <table>
+    <tr><td colspan="2"><strong>Guest:</strong> {{ guest.full_name }}</td></tr>
+    <tr><td><strong>Phone:</strong> {{ guest.phone_number|default:"—" }}</td></tr>
+    <tr>
+      <td><strong>Room:</strong> {{ room.room_number }}{% if room.category %} — {{ room.category.name }}{% endif %}</td>
+    </tr>
+    <tr><td><strong>Check-in:</strong> {{ booking.check_in|date:"d-m-Y" }}</td></tr>
+    <tr><td><strong>Check-out:</strong> {{ booking.check_out|date:"d-m-Y" }}</td></tr>
+  </table>
+
+  <hr class="dash">
+
+  <table>
+    <thead>
+      <tr><th>Item</th><th class="text-end">Amount</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Room Rate (per night)</td><td class="text-end">{{ rate|intcomma }} ৳</td></tr>
+      <tr><td>Total (Gross)</td><td class="text-end">{{ gross|intcomma }} ৳</td></tr>
+      <tr><td>Discount</td><td class="text-end">- {{ discount|intcomma }} ৳</td></tr>
+      <tr><td><strong>Net Payable</strong></td><td class="text-end fw-bold">{{ net|intcomma }} ৳</td></tr>
+      <tr><td>Paid (till now)</td><td class="text-end">{{ paid|intcomma }} ৳</td></tr>
+      <tr><td><strong>Due</strong></td><td class="text-end fw-bold">{{ due|intcomma }} ৳</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="dash">
+
+  {% comment %} Optional: show last payment summary if exists {% endcomment %}
+  {% with lastp=booking.payment_set.last %}
+    {% if lastp %}
+      <div class="muted">
+        Last Payment: {{ lastp.amount|intcomma }} ৳ via {{ lastp.get_method_display }}
+        on {{ lastp.received_at|date:"d M Y, h:i A" }}
+        {% if lastp.txn_ref %}(Ref: {{ lastp.txn_ref }}){% endif %}
+      </div>
+      <hr class="dash">
+    {% endif %}
+  {% endwith %}
+
+  <div class="text-center" style="margin-top:5px;">
+    <p style="margin:0;">Thank you for staying with us!</p>
+    <p class="muted" style="margin:0;">Software by <strong>JBD IT</strong></p>
+  </div>
+</div>
+
+<div class="text-center mt-3 no-print">
+  <button id="btnPrint" class="btn btn-dark btn-sm"><i class="ti ti-printer"></i> Print</button>
+</div>
+
+<script>
+  document.getElementById("btnPrint").addEventListener("click",()=>window.print());
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'accounts/dashboard.html' %}
+{% block content %}
+<div class="container py-4">
+  <h2>Delete Service</h2>
+
+  <div class="alert alert-warning">
+    Are you sure you want to delete the service
+    <strong>{{ service.name|default:"Unnamed Service" }}</strong>?
+    This action cannot be undone.
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <a href="{% url 'services_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

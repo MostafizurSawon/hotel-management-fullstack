@@ -1,0 +1,286 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}Guest List{% endblock %}
+
+{% block content %}
+<style>
+/* Compact icon look — target the SVG produced by Lucide */
+.action-icon svg {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+  opacity: .95;
+}
+.action-icon:hover svg { opacity: 1; }
+
+/* 👁 View hover (blue glow) */
+.action-icon.text-info:hover svg {
+  transform: scale(1.22);
+  filter: drop-shadow(0 0 4px rgba(13,110,253,0.55));
+}
+
+/* ✏️ Edit hover (amber glow) */
+.action-icon.text-warning:hover svg {
+  transform: scale(1.22);
+  filter: drop-shadow(0 0 4px rgba(255,193,7,0.55));
+}
+
+/* 🗑️ Delete hover (red glow) */
+.action-icon.text-danger:hover svg {
+  transform: scale(1.22);
+  filter: drop-shadow(0 0 4px rgba(220,53,69,0.6));
+}
+
+/* Optional: slightly larger click target without borders */
+.action-icon {
+  text-decoration: none;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px; /* invisible padding for easier clicking */
+}
+
+{% comment %} @keyframes subtle-shake {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-1px); }
+  50%  { transform: translateX(1px); }
+  75%  { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+/* Apply shake to lucide SVG on hover */
+.action-icon:hover svg {
+  animation: subtle-shake 0.25s ease-in-out 1;
+  transform-origin: center;
+} {% endcomment %}
+</style>
+
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+  <div class="card">
+    {% comment %} <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="card-title">{{ page_title }}</h4>
+
+      {% if can_manage_guests %}
+        <a href="{% url 'create' %}" class="btn btn-sm btn-primary">
+          <i data-lucide="user-plus me-2"></i> Add Guest
+        </a>
+      {% endif %}
+    </div> {% endcomment %}
+
+
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <h4 class="card-title m-0">
+        {{ page_title }}
+        <span class="badge bg-info ms-2">Total: {{ total_guests }}</span>
+      </h4>
+
+      <div class="d-flex align-items-center gap-2">
+        <!-- Date filter dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Filter by Date
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 320px;">
+            <form method="get">
+              <!-- preserve existing filters -->
+              <input type="hidden" name="q" value="{{ q }}">
+              <input type="hidden" name="profession" value="{{ profession_filter }}">
+              <input type="hidden" name="nationality" value="{{ nationality_filter }}">
+
+              <div class="mb-2">
+                <label class="form-label mb-1">Start date</label>
+                <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label class="form-label mb-1">End date</label>
+                <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+              </div>
+
+              <div class="d-flex justify-content-between">
+                <a class="btn btn-sm btn-light" href="?">Reset</a>
+                <button class="btn btn-sm btn-primary" type="submit">Apply</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {% if can_manage_guests %}
+          <a href="{% url 'create' %}" class="btn btn-sm btn-primary">
+            <i class="me-2" data-lucide="user-plus"></i> Add Guest
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+
+    {% comment %} <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="card-title m-0">
+        {{ page_title }}
+        <span class="badge bg-info ms-2">Total: {{ total_guests }}</span>
+      </h4>
+
+      {% if can_manage_guests %}
+        <a href="{% url 'create' %}" class="btn btn-sm btn-primary">
+          <i class="me-2" data-lucide="user-plus"></i> Add Guest
+        </a>
+      {% endif %}
+    </div> {% endcomment %}
+
+    <div class="card-body">
+      <!-- Search & Filter -->
+      <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search name, phone, or email">
+        </div>
+        <div class="col-md-3">
+          <input type="text" name="profession" value="{{ profession_filter }}" class="form-control" placeholder="Profession">
+        </div>
+        <div class="col-md-3">
+          <input type="text" name="nationality" value="{{ nationality_filter }}" class="form-control" placeholder="Nationality">
+        </div>
+        <div class="col-md-2 d-grid">
+          <button class="btn btn-primary">Filter</button>
+        </div>
+      </form>
+
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table table-striped align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Profession</th>
+              <th>Nationality</th>
+              <th>Created At</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for guest in guests %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  <a href="{% url 'detail' guest.pk %}" class="text-primary fw-semibold">
+                    {{ guest.full_name }}
+                  </a>
+                </td>
+                <td>{{ guest.phone_number }}</td>
+                <td>{{ guest.email|default:"—" }}</td>
+                <td>{{ guest.profession|default:"—" }}</td>
+                <td>{{ guest.nationality|default:"—" }}</td>
+                <td>{{ guest.created_at|date:"d M Y, h:i A" }}</td>
+                {% comment %} <td class="text-center">
+                  <a href="{% url 'edit' guest.pk %}" class="btn btn-sm btn-outline-warning">
+                    <i data-lucide="edit"></i> Edit
+                  </a>
+                </td> {% endcomment %}
+
+                <td class="text-center">
+                  <div class="d-inline-flex gap-2">
+                    <!-- 👁 View -->
+                    <a href="{% url 'detail' guest.pk %}" class="action-icon text-info" title="View">
+                      <i data-lucide="eye"></i>
+                    </a>
+
+                    <!-- ✏️ Edit -->
+                    <a href="{% url 'edit' guest.pk %}" class="action-icon text-warning" title="Edit">
+                      <i data-lucide="edit"></i>
+                    </a>
+
+                    <!-- 🗑️ Delete -->
+                    <form action="{% url 'delete' guest.pk %}" method="post" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="action-icon text-danger border-0 bg-transparent p-0" title="Delete"
+                        onclick="return confirm('Are you sure you want to delete this guest?');">
+                        <i data-lucide="trash-2"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="text-center text-muted py-3">No guests found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if is_paginated %}
+        <nav class="mt-3">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&profession={{ profession_filter }}&nationality={{ nationality_filter }}">«</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">«</span></li>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+              {% if page_obj.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% else %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ i }}&q={{ q }}&profession={{ profession_filter }}&nationality={{ nationality_filter }}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}&profession={{ profession_filter }}&nationality={{ nationality_filter }}">»</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">»</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  // Auto-close alerts
+  setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(a => new bootstrap.Alert(a).close());
+  }, 4000);
+
+  // Initialize Lucide icons
+  lucide.createIcons();
+</script>
+
+
+{% endblock %}
+
+
+
+
+{% comment %} {% if can_manage_guests %}
+<li class="nav-item">
+  <a class="nav-link" href="{% url 'list' %}">
+    <i data-lucide="users"></i> <span>Guest List</span>
+  </a>
+</li>
+{% endif %} {% endcomment %}

@@ -1,0 +1,40 @@
+{% extends layout_path %}
+{% load humanize %}
+{% block title %}Revenue Report{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h4>{{ page_title }}</h4>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h5>Total Revenue: <span class="fw-bold text-success">{{ total_amount|intcomma }} ৳</span></h5>
+    <p class="text-muted mb-0">Period: {{ date_from|date:"d M Y" }} — {{ date_to|date:"d M Y" }}</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-striped mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th><th>Booking</th><th>Method</th><th class="text-end">Amount</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>#{{ p.booking_id }}</td>
+            <td>{{ p.get_method_display }}</td>
+            <td class="text-end">{{ p.amount|intcomma }} ৳</td>
+            <td>{{ p.received_at|date:"d M Y, h:i A" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-muted py-3">No payments found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

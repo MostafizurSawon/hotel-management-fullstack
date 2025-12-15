@@ -1,0 +1,15 @@
+{% extends 'accounts/dashboard.html' %}
+{% block title %}Guest Dashboard{% endblock %}
+
+{% block content %}
+
+<h1>Welcome, {{ request.user.phone_number }}!</h1>
+<p>This is your Guest Dashboard.</p>
+
+<!-- <a href="{% url 'guest_change_password' %}" class="btn btn-outline-primary mt-4 mb-4">
+  Change Password
+</a> -->
+
+
+
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'accounts/dashboard.html' %}
+{% block content %}
+<div class="container py-4">
+  <h2>Delete Testimonial</h2>
+
+  <div class="alert alert-warning">
+    Are you sure you want to delete the testimonial from
+    <strong>{{ testimonial.name|default:"Unnamed" }}</strong>?
+    This action cannot be undone.
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <a href="{% url 'testimonials_list_add' %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

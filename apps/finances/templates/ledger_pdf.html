@@ -1,0 +1,150 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 30px;
+    }
+
+    body {
+      font-family: sans-serif;
+      font-size: 12px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .logo {
+      height: 60px;
+      margin-bottom: 6px;
+    }
+
+    .title {
+      font-weight: bold;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #999;
+      padding: 6px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 11px;
+    }
+
+    /* Column widths */
+    .col-sl       { width: 60px; }
+    .col-date     { width: 95px; }
+    .col-category { width: 90px; }
+    .col-name     { width: 135px; }
+    .col-amount   { width: 110px; }
+    .col-balance  { width: 130px; }
+
+    .text-success { color: green; }
+    .text-danger  { color: red; }
+    .text-end     { text-align: right; }
+    .fw-bold      { font-weight: bold; }
+
+    tfoot td {
+      font-weight: bold;
+      background-color: #f4f4f4;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="{% static 'cus/ledger_invoice.png' %}" class="logo" alt="Logo"><br>
+    <div class="title">
+        Combined Ledger
+        {% if start_date and end_date %}
+          ({{ start_date|date:"d/m/Y" }} to {{ end_date|date:"d/m/Y" }})
+        {% elif start_date %}
+          (From {{ start_date|date:"d/m/Y" }})
+        {% elif end_date %}
+          (Up to {{ end_date|date:"d/m/Y" }})
+        {% endif %}
+      </div>
+      
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th colspan="5">Income</th>
+        <th colspan="4">Expense</th>
+        <th rowspan="2" class="col-balance">Balance</th>
+      </tr>
+      <tr>
+        <th class="col-sl">SL</th>
+        <th class="col-date">Date</th>
+        <th class="col-category">Category</th>
+        <th class="col-name">Name</th>
+        <th class="col-amount">Amount</th>
+
+        <th class="col-date">Date</th>
+        <th class="col-category">Category</th>
+        <th class="col-name">Name</th>
+        <th class="col-amount">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for income, expense in combined_data %}
+      <tr>
+        <td class="col-sl">{{ forloop.counter }}</td>
+        <td class="col-date">{% if income %}{{ income.date|date:"d/m/Y" }}{% endif %}</td>
+        <td class="col-category">{% if income %}{{ income.income_category.name }}{% endif %}</td>
+        <td class="col-name">{% if income %}{{ income.income_name }}{% endif %}</td>
+        <td class="col-amount text-success">{% if income %}{{ income.amount|intcomma }} Tk.{% endif %}</td>
+
+        <td class="col-date">{% if expense %}{{ expense.date|date:"d/m/Y" }}{% endif %}</td>
+        <td class="col-category">{% if expense %}{{ expense.exp_category.name }}{% endif %}</td>
+        <td class="col-name">{% if expense %}{{ expense.exp_name }}{% endif %}</td>
+        <td class="col-amount text-danger">{% if expense %}{{ expense.amount|intcomma }} Tk.{% endif %}</td>
+
+        {% if forloop.first %}
+        <td class="col-balance" rowspan="{{ combined_data|length }}">
+          <strong>{{ balance|intcomma }} Tk.</strong>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" class="text-end text-success">Total Income:</td>
+        <td class="text-success">{{ total_income|intcomma }} Tk.</td>
+
+        <td colspan="3" class="text-end text-danger">Total Expense:</td>
+        <td class="text-danger">{{ total_expense|intcomma }} Tk.</td>
+
+        <td class="col-balance"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="footer">
+    &copy; 2025 Peoples College. All rights reserved. Design & Development by JBD IT | {{ now|date:"d F, Y" }}
+  </div>
+
+</body>
+</html>

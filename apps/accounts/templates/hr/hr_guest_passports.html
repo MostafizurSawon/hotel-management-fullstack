@@ -1,0 +1,42 @@
+{% extends 'accounts/dashboard.html' %}
+
+{% block title %}Guests Passport Info{% endblock %}
+
+{% block content %}
+<h2>Guests Passport Information</h2>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Phone Number</th>
+      <th>Full Name</th>
+      <th>Passport Number</th>
+      <th>Date of Birth</th>
+      <th>Nationality</th>
+      <th>Place of Issue</th>
+      <th>Issue Date</th>
+      <th>Expiry Date</th>
+      <!-- Add more fields as needed -->
+    </tr>
+  </thead>
+  <tbody>
+    {% for passport in guest_passports %}
+    <tr>
+      <td>{{ passport.user.phone_number }}</td>
+      <td>{{ passport.full_name }}</td>
+      <td>{{ passport.passport_number }}</td>
+      <td>{{ passport.date_of_birth }}</td>
+      <td>{{ passport.nationality }}</td>
+      <td>{{ passport.place_of_issue }}</td>
+      <td>{{ passport.issue_date }}</td>
+      <td>{{ passport.expiry_date }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="8">No passport information found.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

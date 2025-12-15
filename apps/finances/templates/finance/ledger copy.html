@@ -1,0 +1,364 @@
+{% comment %} {% extends layout_path %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Ledger{% endblock %}
+
+{% block content %}
+
+<style>
+  .ledger-table th,
+  .ledger-table td {
+    border-left: 1px solid #dee2e6 !important;
+    border-right: 1px solid #dee2e6 !important;
+  }
+
+  .ledger-table {
+    border-collapse: separate !important;
+    border-spacing: 0;
+  }
+
+  .ledger-table td.amount-cell {
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .text-end { text-align: right; }
+</style>
+
+<div class="content-header">
+  <h4 class="mb-2">Ledger</h4>
+</div>
+
+<!-- Filters -->
+<div class="card p-3 mb-4">
+  <form method="get" class="row g-2">
+    <div class="col-md-3">
+      <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="Search note or name">
+    </div>
+    <div class="col-md-2">
+      <select name="income_category" class="form-select">
+        <option value="">Income Category</option>
+        {% for cat in income_categories %}
+          <option value="{{ cat.id }}" {% if income_category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select name="expense_category" class="form-select">
+        <option value="">Expense Category</option>
+        {% for cat in expense_categories %}
+          <option value="{{ cat.id }}" {% if expense_category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+    </div>
+    <div class="col-md-2">
+      <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+    </div>
+    <div class="col-md-1 d-flex gap-1">
+      <button class="btn btn-primary w-100">Filter</button>
+      <a href="{% url 'ledger_view' %}" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
+</div>
+<!-- Totals -->
+ <a href="{% url 'ledger_export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-primary ms-2 my-4">
+  📥 Export CSV
+</a>
+
+<a href="{% url 'ledger_export_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-success ms-2 my-2" target="_blank">
+  📄 Export PDF
+</a>
+
+
+<!-- Ledger Table -->
+<div class="row">
+  <div class="col-12 col-md-6 mb-4">
+
+    <div class="card p-2">
+      <h5 class="text-center">Income</h5>
+      <div class="table-responsive">
+      <table class="table table-striped ledger-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in income_page %}
+          <tr>
+            <td>{{ i.date|date:"j/n/Y" }}</td>
+            <td>{{ i.income_category.name }}</td>
+            <td>{{ i.income_name }}</td>
+            <td class="text-success" style="flex-wrap: wrap;">{{ i.amount|intcomma }} ৳</td>
+            <td>{{ i.note|safe }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center">No income found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="text-success mt-3"><strong> Total Income: {{ total_income|intcomma }} ৳</strong> </div>
+    </div>
+      <div class="text-center mt-5">
+        {% if income_page.has_other_pages %}
+        <nav>
+          <ul class="pagination justify-content-center">
+            {% if income_page.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?income_page={{ income_page.previous_page_number }}&{{ request.GET.urlencode|safe }}">«</a>
+              </li>
+            {% endif %}
+
+            {# First page #}
+            {% if income_page.number > 3 %}
+              <li class="page-item">
+                <a class="page-link" href="?income_page=1&{{ request.GET.urlencode|safe }}">1</a>
+              </li>
+              <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+
+            {# Page numbers around current #}
+            {% for num in income_page.paginator.page_range %}
+              {% if num >= income_page.number|add:'-2' and num <= income_page.number|add:'2' %}
+                <li class="page-item {% if income_page.number == num %}active{% endif %}">
+                  <a class="page-link" href="?income_page={{ num }}&{{ request.GET.urlencode|safe }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {# Last page #}
+            {% if income_page.number < income_page.paginator.num_pages|add:'-2' %}
+              <li class="page-item disabled"><span class="page-link">...</span></li>
+              <li class="page-item">
+                <a class="page-link" href="?income_page={{ income_page.paginator.num_pages }}&{{ request.GET.urlencode|safe }}">
+                  {{ income_page.paginator.num_pages }}
+                </a>
+              </li>
+            {% endif %}
+
+            {% if income_page.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?income_page={{ income_page.next_page_number }}&{{ request.GET.urlencode|safe }}">»</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 mb-4">
+
+    <div class="card p-2">
+      <h5 class="text-center">Expense</h5>
+      <div class="table-responsive">
+      <table class="table table-striped ledger-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in expense_page %}
+          <tr>
+            <td>{{ e.date|date:"j/n/Y" }}</td>
+            <td>{{ e.exp_category.name }}</td>
+            <td>{{ e.exp_name }}</td>
+            <td class="text-danger">{{ e.amount|intcomma }} ৳</td>
+            <td>{{ e.note|safe }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center">No expense found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="text-danger mt-3"><strong>Total Expense: {{ total_expense|intcomma }} ৳</strong></div>
+    </div>
+      <div class="text-center mt-5">
+        {% if expense_page.has_other_pages %}
+        <nav>
+          <ul class="pagination justify-content-center">
+
+            {% if expense_page.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?expense_page={{ expense_page.previous_page_number }}&{{ request.GET.urlencode|safe }}">«</a>
+              </li>
+            {% endif %}
+
+            {% if expense_page.number > 3 %}
+              <li class="page-item">
+                <a class="page-link" href="?expense_page=1&{{ request.GET.urlencode|safe }}">1</a>
+              </li>
+              <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+
+            {% for num in expense_page.paginator.page_range %}
+              {% if num >= expense_page.number|add:'-2' and num <= expense_page.number|add:'2' %}
+                <li class="page-item {% if expense_page.number == num %}active{% endif %}">
+                  <a class="page-link" href="?expense_page={{ num }}&{{ request.GET.urlencode|safe }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if expense_page.number < expense_page.paginator.num_pages|add:'-2' %}
+              <li class="page-item disabled"><span class="page-link">...</span></li>
+              <li class="page-item">
+                <a class="page-link" href="?expense_page={{ expense_page.paginator.num_pages }}&{{ request.GET.urlencode|safe }}">{{ expense_page.paginator.num_pages }}</a>
+              </li>
+            {% endif %}
+
+            {% if expense_page.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?expense_page={{ expense_page.next_page_number }}&{{ request.GET.urlencode|safe }}">»</a>
+              </li>
+            {% endif %}
+
+          </ul>
+        </nav>
+      {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% endcomment %}
+
+
+
+
+{% extends layout_path %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Ledger{% endblock %}
+
+{% block content %}
+<style>
+  .ledger-table th, .ledger-table td {
+    border: 1px solid #dee2e6;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 14px;
+  }
+
+  .text-end { text-align: right; }
+  .text-success { color: green; }
+  .text-danger { color: red; }
+</style>
+
+<div class="content-header">
+  <h4 class="mb-2">Ledger</h4>
+</div>
+
+<!-- Filter Form -->
+<div class="card p-3 mb-4">
+  <form method="get" class="row g-2">
+    <div class="col-md-3">
+      <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="Search note or name">
+    </div>
+    <div class="col-md-2">
+      <select name="income_category" class="form-select">
+        <option value="">Income Category</option>
+        {% for cat in income_categories %}
+        <option value="{{ cat.id }}" {% if income_category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select name="expense_category" class="form-select">
+        <option value="">Expense Category</option>
+        {% for cat in expense_categories %}
+        <option value="{{ cat.id }}" {% if expense_category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+    </div>
+    <div class="col-md-2">
+      <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+    </div>
+    <div class="col-md-1 d-flex gap-1">
+      <button class="btn btn-primary w-100">Filter</button>
+      <a href="{% url 'ledger_view' %}" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
+</div>
+
+<!-- Export Buttons -->
+<a href="{% url 'ledger_export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-primary ms-2 my-2">
+  📥 Export CSV
+</a>
+<a href="{% url 'ledger_export_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-success ms-2 my-2" target="_blank">
+  📄 Export PDF
+</a>
+
+<!-- Ledger Table -->
+<div class="card p-3 mt-4">
+  <h5 class="text-center">Combined Ledger</h5>
+  <div class="table-responsive">
+    <table class="table table-bordered ledger-table">
+      <thead class="table-light">
+        <tr>
+          <th colspan="5">Income</th>
+          <th colspan="5">Expense</th>
+          <th rowspan="2">Balance</th>
+        </tr>
+        <tr>
+          <th>SL</th>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Name</th>
+          <th>Amount</th>
+          <th>SL</th>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Name</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for income, expense in combined_data %}
+        <tr>
+          <td>{% if income %}{{ income.date|date:"d/m/Y" }}{% endif %}</td>
+          <td>{% if income %}{{ income.income_category.name }}{% endif %}</td>
+          <td>{% if income %}{{ income.income_name }}{% endif %}</td>
+          <td class="text-success">{% if income %}{{ income.amount|intcomma }} ৳{% endif %}</td>
+
+
+          <td>{{ forloop.counter }}</td>
+          <td>{% if expense %}{{ expense.date|date:"d/m/Y" }}{% endif %}</td>
+          <td>{% if expense %}{{ expense.exp_category.name }}{% endif %}</td>
+          <td>{% if expense %}{{ expense.exp_name }}{% endif %}</td>
+          <td class="text-danger">{% if expense %}{{ expense.amount|intcomma }} ৳{% endif %}</td>
+
+
+          {% if forloop.first %}
+          <td rowspan="{{ combined_data|length }}"><strong>{{ balance|intcomma }} ৳</strong></td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="row mt-3">
+      <div class="col-md-6 text-success"><strong>Total Income: {{ total_income|intcomma }} ৳</strong></div>
+      <div class="col-md-6 text-danger text-end"><strong>Total Expense: {{ total_expense|intcomma }} ৳</strong></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

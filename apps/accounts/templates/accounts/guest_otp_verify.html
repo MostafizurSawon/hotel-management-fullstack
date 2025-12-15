@@ -1,0 +1,111 @@
+{% extends layout_path %}
+{% load static %}
+{% load i18n %}
+{% block title %} OTP যাচাই - Go on TravelDesk {% endblock title %}
+
+{% block vendor_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'vendor/libs/@form-validation/form-validation.css' %}" />
+{% endblock vendor_css %}
+
+{% block vendor_js %}
+  {{ block.super }}
+  <script src="{% static 'vendor/libs/@form-validation/popular.js' %}"></script>
+  <script src="{% static 'vendor/libs/@form-validation/bootstrap5.js' %}"></script>
+  <script src="{% static 'vendor/libs/@form-validation/auto-focus.js' %}"></script>
+{% endblock vendor_js %}
+
+{% block page_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'vendor/css/pages/page-auth.css' %}" />
+{% endblock page_css %}
+
+{% block page_js %}
+  {{ block.super }}
+  <script src="{% static 'js/pages-auth.js' %}"></script>
+{% endblock page_js %}
+
+{% block content %}
+<div class="authentication-wrapper authentication-cover">
+  <!-- Logo -->
+  <a href="{% url 'home' %}" class="app-brand auth-cover-brand">
+    <span class=" d-inline-block">
+      <img src="{% static 'cus/logo.png' %}"
+           alt="College Logo"
+           class="rounded-circle border shadow-sm"
+           style="height:56px; width:56px; object-fit:cover; display:block;">
+    </span>
+    <span class="app-brand-text demo text-heading fw-bold">Nawabganj City College</span>
+  </a>
+  <!-- /Logo -->
+
+  <div class="authentication-inner row m-0">
+    <!-- /Left Text -->
+    <div class="d-none d-lg-flex col-lg-8 p-0">
+      <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center">
+        <img
+          src="{% static 'img/illustrations/boy-with-rocket-' %}{{ COOKIES.style|default:'light' }}.png"
+          alt="auth-login-cover"
+          class="my-5 auth-illustration"
+          data-app-light-img="illustrations/boy-with-rocket-light.png"
+          data-app-dark-img="illustrations/boy-with-rocket-dark.png"
+        />
+        <img
+          src="{% static 'img/illustrations/bg-shape-image-' %}{{ COOKIES.style|default:'light' }}.png"
+          alt="auth-login-cover"
+          class="platform-bg"
+          data-app-light-img="illustrations/bg-shape-image-light.png"
+          data-app-dark-img="illustrations/bg-shape-image-dark.png"
+        />
+      </div>
+    </div>
+    <!-- /Left Text -->
+
+    <!-- OTP Verification -->
+    <div class="d-flex col-12 col-lg-4 align-items-center authentication-bg p-sm-12 p-6">
+      <div class="w-px-400 mx-auto mt-12 pt-5">
+        <h4 class="mb-1">আপনার ফোনে পাঠানো OTP দিন! 👋</h4>
+        <p class="mb-6">OTP দিয়ে আপনার অ্যাকাউন্টটি যাচাই করুন।</p>
+
+        {% if messages %}
+          {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+
+        <form id="formOtpVerification" class="mb-6" method="POST" action="{% url 'guest_otp_verify' %}">
+          {% csrf_token %}
+          <div class="mb-6">
+            <label for="otp" class="form-label">OTP</label>
+            <input
+              type="text"
+              class="form-control"
+              id="otp"
+              name="otp"
+              placeholder="Enter the OTP"
+              maxlength="6"
+              autofocus
+              required
+            />
+          </div>
+
+          <button class="btn btn-success d-grid w-100">OTP যাচাই করুন</button>
+        </form>
+
+        <p class="text-center">
+          <span>OTP পাননি?</span>
+            <a href="{% url 'guest_register' %}">
+              <span>নতুন OTP অনুরোধ করুন</span>
+          </a>
+
+        </p>
+      </div>
+    </div>
+    <!-- /OTP Verification -->
+  </div>
+</div>
+{% endblock content %}

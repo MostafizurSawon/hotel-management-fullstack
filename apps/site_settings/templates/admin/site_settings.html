@@ -1,0 +1,110 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}
+  Hotel Settings
+{% endblock %}
+
+{% block content %}
+  <div class="">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <h4 class="mb-4">Hotel Settings</h4>
+    <form method="post" enctype="multipart/form-data" class="card p-5">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="row">
+
+        <div class="col-md-6 mb-3">
+          <label for="id_name">Hotel Name</label>
+          {{ form.name }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label for="id_email">Email</label>
+          {{ form.email }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_post">Post Office</label>
+          {{ form.post }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_upozilla">Address</label>
+          {{ form.upozilla }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_district">District</label>
+          {{ form.district }}
+        </div>
+
+        {% comment %} <div class="col-md-4 mb-3">
+          <label for="id_eiin">EIIN</label>
+          {{ form.eiin }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_school_code">College Code</label>
+          {{ form.school_code }}
+        </div> {% endcomment %}
+
+        <div class="col-md-4 mb-3">
+          <label for="id_established">Established at</label>
+          {{ form.established }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_phone">Phone Number</label>
+          {{ form.phone }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_map_link">Map Link</label>
+          {{ form.map_link }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_img">Main Banner/Image</label><br />
+          {% if form.instance.img %}
+            <div >
+              <img style="height: 80px; object-fit:cover;" src="{{ form.instance.img.url }}" alt="Main Image" class="img-thumbnail mb-2 w-100" />
+            </div>
+          {% endif %}
+          {{ form.img }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_logo">Logo</label><br />
+          {% if form.instance.logo %}
+            <div >
+              <img style="height: 80px; object-fit:cover;" src="{{ form.instance.logo.url }}" alt="Logo" class="img-thumbnail mb-2" />
+            </div>
+          {% endif %}
+          {{ form.logo }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <label for="id_favicon">Favicon</label><br />
+          {% if form.instance.favicon %}
+            <div>
+              <img style="height: 80px; object-fit:cover;" src="{{ form.instance.favicon.url }}" alt="Favicon" class="img-thumbnail mb-2" />
+            </div>
+          {% endif %}
+          {{ form.favicon }}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary mt-3">সংরক্ষণ করুন</button>
+    </form>
+  </div>
+{% endblock %}

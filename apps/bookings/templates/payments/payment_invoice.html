@@ -1,0 +1,135 @@
+{% extends layout_path %}
+{% load humanize %}
+{% block title %}Invoice #{{ payment.id }}{% endblock %}
+
+{% block content %}
+<style>
+  @media print {
+    @page { size: 80mm auto; margin: 0; }
+    body { margin: 0; }
+    .no-print { display: none !important; }
+    .invoice-wrap { border: none; }
+  }
+
+  body {
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    color: #000;
+    background: #fff;
+  }
+
+  .invoice-wrap {
+    width: 80mm;
+    margin: 0 auto;
+    padding: 6px 10px;
+    border: 1px dashed #000;
+    background: #fff;
+  }
+
+  .text-center { text-align: center; }
+  .text-end { text-align: right; }
+  .fw-bold { font-weight: bold; }
+  hr.dash { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { padding: 2px 0; vertical-align: top; }
+  .sign-row td { padding-top: 15px; }
+  .muted { color: #333; font-size: 11px; }
+  .tag { border: 1px solid #000; border-radius: 8px; font-size: 10px; padding: 0 4px; }
+</style>
+<div class="mt-4"></div>
+<div id="invoice-area" class="invoice-wrap">
+  <div class="text-center fw-bold" style="font-size:14px;">{{ site_settings.name|default:"Hotel Hilton City" }}</div>
+  <div class="text-center" style="font-size:11px; line-height:1.4;">
+    {{ site_settings.post|default:"Chowmuhoni Circle" }},
+    {{ site_settings.upozilla|default:"Agrabad" }},
+    {{ site_settings.distric|default:"Chittagong" }}<br>
+    Phone: {{ site_settings.phone|default:"01844356222" }}
+  </div>
+  <hr class="dash">
+
+  <table>
+    <tr>
+      <td><strong>Invoice #{{ payment.id }}</strong></td>
+      <td class="text-end">{{ payment.received_at|date:"d M Y, h:i A" }}</td>
+    </tr>
+    <tr>
+      <td colspan="2"><span class="muted">Booking #{{ payment.booking.id }}</span></td>
+    </tr>
+  </table>
+
+  <hr class="dash">
+
+  <table>
+    <tr><td colspan="2"><strong>Guest:</strong> {{ payment.booking.guest.full_name }}</td></tr>
+    <tr><td><strong>Phone:</strong> {{ payment.booking.guest.phone_number|default:"—" }}</td></tr>
+    <tr><td><strong>Room:</strong> {{ payment.booking.room.room_number }}</td></tr>
+    <tr><td><strong>Check-in:</strong> {{ payment.booking.check_in|date:"d-m-Y" }}</td></tr>
+    <tr><td><strong>Check-out:</strong> {{ payment.booking.check_out|date:"d-m-Y" }}</td></tr>
+  </table>
+
+  <hr class="dash">
+
+  <table>
+    <thead>
+      <tr><th>Item</th><th class="text-end">Amount</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Room Rent</td><td class="text-end">{{ payment.booking.nightly_rate|default:0|intcomma }} ৳</td></tr>
+      <tr><td>Total (Net)</td><td class="text-end">{{ payment.booking.net_amount|default:0|intcomma }} ৳</td></tr>
+      <tr><td>Discount</td><td class="text-end">{{ payment.booking.discount_amount|default:0|intcomma }} ৳</td></tr>
+      <tr>
+        <td><strong>This Payment</strong></td>
+        <td class="text-end fw-bold">{{ payment.amount|default:0|intcomma }} ৳</td>
+      </tr>
+      <tr><td>Paid (till now)</td><td class="text-end">{{ payment.booking.payment_amount|default:0|intcomma }} ৳</td></tr>
+      <tr>
+        <td><strong>Due</strong></td>
+        <td class="text-end fw-bold">{{ payment.booking.due_amount|default:0|intcomma }} ৳</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="dash">
+
+  <div>
+    <span class="muted">Payment via {{ payment.get_method_display }}</span><br>
+    {% if payment.txn_ref %}
+      Ref: {{ payment.txn_ref }}<br>
+    {% endif %}
+    {% comment %} Note: {{ payment.note|default:"—" }} {% endcomment %}
+  </div>
+
+  <hr class="dash">
+
+  <div class="text-center" style="margin-top:5px;">
+    <p style="margin:0;">Thank you for staying with us!</p>
+    <p class="muted" style="margin:0;">Software by <strong>JBD IT</strong></p>
+  </div>
+</div>
+
+<div class="text-center mt-3 no-print">
+  <button id="btnPrint" class="btn btn-dark btn-sm me-2">
+    <i class="ti ti-printer"></i> Print
+  </button>
+  <button id="btnPDF" class="btn btn-success btn-sm">
+    <i class="ti ti-download"></i> PDF
+  </button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script>
+document.getElementById("btnPrint").addEventListener("click",()=>window.print());
+document.getElementById("btnPDF").addEventListener("click", async ()=>{
+  const { jsPDF } = window.jspdf;
+  const area = document.getElementById("invoice-area");
+  const canvas = await html2canvas(area,{scale:2});
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF({orientation:"p",unit:"mm",format:[80,canvas.height * 80 / canvas.width]});
+  const imgW = 76;
+  const imgH = (canvas.height * imgW) / canvas.width;
+  pdf.addImage(imgData,"PNG",2,2,imgW,imgH);
+  pdf.save("Invoice_{{ payment.id }}.pdf");
+});
+</script>
+{% endblock %}

@@ -1,0 +1,191 @@
+{
+  "menu": [
+    {
+      "url": "index",
+      "icon": "menu-icon tf-icons ti ti-home",
+      "name": "Dashboard",
+      "slug": "index"
+    },
+    { "menu_header": "—— Admission Section ——" },
+    {
+      "url": "fee_list",
+      "icon": "menu-icon tf-icons ti ti-currency-dollar",
+      "name": "Admission Fees",
+      "slug": "fee_list"
+    },
+    {
+      "name": "Students List",
+      "icon": "menu-icon tf-icons ti ti-users-group",
+      "slug": "academy",
+      "submenu": [
+        {
+          "url": "admitted_students_list",
+          "icon": "menu-icon tf-icons ti ti-user-check",
+          "name": "Hsc Students",
+          "slug": "admitted_students_list"
+        },
+        {
+          "url": "degree_admitted_students_list",
+          "icon": "menu-icon tf-icons ti ti-user-graduate",
+          "name": "Degree Students",
+          "slug": "degree_admitted_students_list"
+        }
+      ]
+    },
+    {
+      "url": "subject_wise_students",
+      "icon": "menu-icon tf-icons ti ti-book-2",
+      "name": "Subject Wise Students",
+      "slug": "subject_wise_students"
+    },
+    { "menu_header": "—— Institute Section ——" },
+    {
+      "name": "Exams",
+      "icon": "menu-icon tf-icons ti ti-file-check",
+      "slug": "academy",
+      "submenu": [
+        {
+          "url": "subject_list",
+          "name": "Exam Subjects",
+          "slug": "subject_list"
+        },
+        {
+          "url": "exam_create",
+          "name": "Exam List",
+          "slug": "exam_create"
+        },
+        {
+        "name": "Admit Card",
+        "icon": "menu-icon tf-icons ti ti-school",
+        "slug": "marks",
+        "submenu": [
+          {
+            "url": "exam2",
+            "name": "Admit Card (Front)",
+            "slug": "exam2"
+          },
+          {
+            "url": "exam3",
+            "name": "Admit Card (Back)",
+            "slug": "exam3"
+          }
+          ]
+        },
+
+        {
+          "url": "seatplan_subjects",
+          "name": "Seat Plan & Attendance",
+          "slug": "seatplan_subjects"
+        },
+        {
+        "name": "Marks Related",
+        "icon": "menu-icon tf-icons ti ti-school",
+        "slug": "marks",
+        "submenu": [
+          {
+            "url": "exam_list_marks",
+            "name": "Add Marks",
+            "slug": "exam_list_marks"
+          },
+          {
+            "url": "exam_list",
+            "name": "Marks Distribution",
+            "slug": "exam_list"
+          },
+          {
+            "url": "exam7",
+            "name": "Mark Sheet",
+            "slug": "exam7"
+          },
+          {
+            "url": "exam8",
+            "name": "Tabulation Sheet",
+            "slug": "exam8"
+          }
+        ]
+      }
+
+      ]
+    },
+    {
+      "name": "Teachers",
+      "icon": "menu-icon tf-icons ti ti-user",
+      "slug": "income-expense",
+      "submenu": [
+        {
+          "url": "te1",
+          "name": "Teacher's List",
+          "slug": "te1"
+        }
+      ]
+    },
+    { "menu_header": "—— Financial Section ——" },
+    {
+      "name": "Fees and Payment",
+      "icon": "menu-icon tf-icons ti ti-receipt-2",
+      "slug": "academy",
+      "submenu": [
+        {
+          "url": "p1",
+          "name": "Add Payment",
+          "slug": "admitted_students_list"
+        },
+        {
+          "url": "student-invoice-list",
+          "name": "Manual Payment",
+          "slug": "student-invoice-list"
+        },
+        {
+          "url": "invoice-generate",
+          "name": "Invoice Generate",
+          "slug": "invoice-generate"
+        },
+        {
+          "url": "purpose-invoice-page",
+          "name": "Invoice Purpose",
+          "slug": "purpose-invoice-page"
+        }
+      ]
+    },
+    {
+      "name": "Income",
+      "icon": "menu-icon tf-icons ti ti-cash",
+      "slug": "income-expense",
+      "submenu": [
+        {
+          "url": "income_list",
+          "name": "Income List",
+          "slug": "income_list"
+        },
+        {
+          "url": "income_category_list",
+          "name": "Income Category",
+          "slug": "income_category_list"
+        }
+      ]
+    },
+    {
+      "name": "Expense",
+      "icon": "menu-icon tf-icons ti ti-wallet",
+      "slug": "income-expense",
+      "submenu": [
+        {
+          "url": "expense_list",
+          "name": "Expense List",
+          "slug": "expense_list"
+        },
+        {
+          "url": "expense_category_list",
+          "name": "Expense Category",
+          "slug": "expense_category_list"
+        }
+      ]
+    },
+    {
+      "url": "ledger_view",
+      "icon": "menu-icon tf-icons ti ti-report",
+      "name": "Income Expense Ledger",
+      "slug": "ledger_view"
+    }
+  ]
+}

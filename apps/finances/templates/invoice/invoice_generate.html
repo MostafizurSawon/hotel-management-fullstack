@@ -1,0 +1,332 @@
+{% extends layout_path %}
+{% load static %}
+{% load humanize %}
+{% block title %}Invoice Generate{% endblock %}
+{% block content %}
+
+<div class="">
+  <!-- 🔼 Invoice Create Form -->
+   {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  <div class="card my-4">
+
+    <div class="card-header"><h5>Generate Invoice</h5></div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <label for="id_invoice_session" class="form-label">Session</label>
+            <select name="invoice_session" id="id_invoice_session" class="form-select" required>
+              {% for session in form.fields.invoice_session.queryset %}
+                <option value="{{ session.id }}" {% if form.initial.invoice_session == session.id %}selected{% endif %}>
+                  {{ session.ses_name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label for="id_invoice_program" class="form-label">Program</label>
+            <select name="invoice_program" id="id_invoice_program" class="form-select" required>
+              {% for program in form.fields.invoice_program.queryset %}
+                <option value="{{ program.id }}" {% if form.initial.invoice_program == program.id %}selected{% endif %}>
+                  {{ program.pro_name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label for="id_invoice_group" class="form-label">Group</label>
+            <select name="invoice_group" id="id_invoice_group" class="form-select" required>
+              {% for group in form.fields.invoice_group.queryset %}
+                <option value="{{ group.id }}" {% if form.initial.invoice_group == group.id %}selected{% endif %}>
+                  {{ group.get_group_name_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-3 mb-3">
+            <label for="id_invoice_purpose" class="form-label">Purpose</label>
+            <select name="invoice_purpose" id="id_invoice_purpose" class="form-select" required>
+              {% for purpose in form.fields.invoice_purpose.queryset %}
+                <option value="{{ purpose.id }}" {% if form.initial.invoice_purpose == purpose.id %}selected{% endif %}>
+                  {{ purpose.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-12 mb-3 d-flex  align-items-end">
+            <div class="">
+              <label for="id_amount" class="form-label">Amount</label>
+              <input type="number" name="amount" id="id_amount" class="form-control" min="0" value="{{ form.initial.amount|default:'' }}" required>
+            </div>
+
+            <div class="ms-5">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-plus-circle me-2"></i>  Generate & Assign
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="text">
+
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- 📄 Invoice List -->
+  <div class="card">
+    <div class="card-header">
+      <h5>Invoice List</h5>
+      <div class="">
+      <form method="get" class="row g-2 mb-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Search</label>
+        <input type="text" name="search" class="form-control" value="{{ selected_search }}" placeholder="Search by group or purpose">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Purpose</label>
+        <select name="purpose" class="form-select">
+          <option value="">-- All --</option>
+          {% for pur in invoice_purpose_list %}
+            <option value="{{ pur.id }}" {% if selected_purpose == pur.id|stringformat:"s" %}selected{% endif %}>
+              {{ pur.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Program</label>
+        <select name="program" class="form-select">
+          <option value="">-- All --</option>
+          {% for prog in program_list %}
+            <option value="{{ prog.id }}" {% if selected_program == prog.id|stringformat:"s" %}selected{% endif %}>
+              {{ prog.pro_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% comment %} <div class="col-md-2">
+        <label class="form-label">Session</label>
+        <select name="session" class="form-select">
+          <option value="">-- All --</option>
+          {% for ses in session_list %}
+            <option value="{{ ses.id }}" {% if selected_session == ses.id|stringformat:"s" %}selected{% endif %}>
+              {{ ses.ses_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div> {% endcomment %}
+
+      <div class="col-md-1 d-grid">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-search"></i> Search
+        </button>
+      </div>
+
+      <div class="col-md-1 d-grid">
+        <a href="{% url 'invoice-generate' %}" class="btn btn-secondary">Reset</a>
+      </div>
+    </form>
+    </div>
+    </div>
+
+
+
+    <div class="card-body table-responsive">
+      <table class="table table-bordered text-center">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Actions</th>
+            <th>Session</th>
+            <th>Program</th>
+            <th>Group</th>
+            <th>Purpose</th>
+            <th>Amount</th>
+
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td class="text-center">
+              <!-- ✏️ Edit Modal Button -->
+              <button class="btn btn-icon btn-sm btn-outline-warning me-1"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editModal{{ invoice.id }}"
+                      title="Edit Invoice">
+                <i class="fas fa-edit"></i>
+              </button>
+
+              <!-- 🗑️ Delete Button -->
+              <form method="post" action="{% url 'invoice-delete' invoice.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-icon btn-sm btn-outline-danger"
+                        title="Delete Invoice"
+                        onclick="return confirm('Delete this invoice?')">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </form>
+            </td>
+            <td>{{ invoice.invoice_session }}</td>
+            <td>{{ invoice.invoice_program }}</td>
+            <td>{{ invoice.invoice_group }}</td>
+            <td>{{ invoice.invoice_purpose }}</td>
+            <td>{{ invoice.amount|intcomma }} ৳</td>
+            {% comment %} <td>
+              <!-- 📝 Edit Modal Trigger -->
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ invoice.id }}">
+                ✏️
+              </button>
+
+              <!-- ❌ Delete Form -->
+              <form method="post" action="{% url 'invoice-delete' invoice.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this invoice?')">🗑️</button>
+              </form>
+            </td> {% endcomment %}
+
+
+          </tr>
+
+          <!-- 📝 Edit Modal -->
+          <div class="modal fade" id="editModal{{ invoice.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+
+                <form method="post" action="{% url 'invoice-edit' invoice.id %}">
+                {% csrf_token %}
+
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Invoice</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <div class="mb-2">
+                    <label>Session</label>
+                    <select name="invoice_session" class="form-select" required>
+                      {% for session in form.fields.invoice_session.queryset %}
+                        <option value="{{ session.id }}" {% if invoice.invoice_session.id == session.id %}selected{% endif %}>
+                          {{ session.ses_name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="mb-2">
+                    <label>Program</label>
+                    <select name="invoice_program" class="form-select" required>
+                      {% for program in form.fields.invoice_program.queryset %}
+                        <option value="{{ program.id }}" {% if invoice.invoice_program.id == program.id %}selected{% endif %}>
+                          {{ program.pro_name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="mb-2">
+                    <label>Group</label>
+                    <select name="invoice_group" class="form-select" required>
+                      {% for group in form.fields.invoice_group.queryset %}
+                        <option value="{{ group.id }}" {% if invoice.invoice_group.id == group.id %}selected{% endif %}>
+                          {{ group.group_name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="mb-2">
+                    <label>Purpose</label>
+                    <select name="invoice_purpose" class="form-select" required>
+                      {% for purpose in invoice_purpose_list %}
+                        <option value="{{ purpose.id }}" {% if invoice.invoice_purpose.id == purpose.id %}selected{% endif %}>
+                          {{ purpose.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="mb-2">
+                    <label>Amount</label>
+                    <input type="number" name="amount" value="{{ invoice.amount }}" class="form-control" required>
+                  </div>
+                </div>
+
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+              </form>
+
+
+
+              </div>
+            </div>
+          </div>
+
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+
+    <div class="mt-3">
+    <div class="card-footer d-flex justify-content-end">
+    {% if is_paginated %}
+      <nav>
+        <ul class="pagination pagination-sm">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.session %}session={{ request.GET.session }}&{% endif %}{% if request.GET.program %}program={{ request.GET.program }}&{% endif %}{% if request.GET.group %}group={{ request.GET.group }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                «
+              </a>
+            </li>
+          {% endif %}
+
+          {% for i in paginator.page_range %}
+            {% if i <= 2 or i > paginator.num_pages|add:'-2' or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.session %}session={{ request.GET.session }}&{% endif %}{% if request.GET.program %}program={{ request.GET.program }}&{% endif %}{% if request.GET.group %}group={{ request.GET.group }}&{% endif %}page={{ i }}">{{ i }}</a>
+
+              </li>
+            {% elif i == 3 or i == paginator.num_pages|add:'-3' %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+          {% endfor %}
+
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.session %}session={{ request.GET.session }}&{% endif %}{% if request.GET.program %}program={{ request.GET.program }}&{% endif %}{% if request.GET.group %}group={{ request.GET.group }}&{% endif %}page={{page_obj.next_page_number }}">
+                »
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+  </div>
+
+  </div>
+</div>
+
+{% endblock %}

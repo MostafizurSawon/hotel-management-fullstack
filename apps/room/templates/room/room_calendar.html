@@ -1,0 +1,218 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Room Calendar{% endblock %}
+
+{% block content %}
+<div class="">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">{{ page_title }}</h4>
+  </div>
+
+  <!-- Controls -->
+  <div class="card mb-3 shadow-sm">
+    <div class="card-body">
+      <form class="row g-2 align-items-end" onsubmit="return false;">
+        <div class="col-md-4">
+          <label class="form-label mb-1">Room</label>
+          <select id="roomSel" class="form-select">
+            <option value="">Select Room</option>
+            {% for r in rooms %}
+              <option value="{{ r.id }}">
+                {{ r.room_number }}{% if r.category %} — {{ r.category.name }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1">Month</label>
+          <input id="monthSel" type="month" class="form-control">
+        </div>
+        <div class="col-md-2 d-grid">
+          <button id="btnLoad" type="button" class="btn btn-primary">
+            <i class="ti ti-calendar-stats me-1"></i> Load
+          </button>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button id="btnReset" type="button" class="btn btn-outline-secondary">
+            <i class="ti ti-rotate-ccw me-1"></i> Reset
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Calendar + sidebar -->
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div id="monthHeader" class="h5 mb-3"></div>
+          <div id="calendar" class="calendar-grid"></div>
+          <div class="mt-2 small">
+            <span class="legend booked"></span> Booked
+            <span class="legend today ms-3"></span> Today
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="mb-2">Room Snapshot</h6>
+          <div class="small text-muted mb-2" id="snapNextFree">Next free: —</div>
+          <h6 class="mb-2">Upcoming (next 5)</h6>
+          <ul id="upcomingList" class="list-group small"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.calendar-grid{
+  display:grid; grid-template-columns:repeat(7, 1fr); gap:.5rem;
+}
+.calendar-grid .cell{
+  border:1px solid var(--bs-border-color);
+  border-radius:.5rem; min-height:72px; padding:.5rem;
+  background: var(--bs-body-bg);
+  position:relative; overflow:hidden;
+}
+.calendar-grid .day{font-weight:600; font-size:.9rem;}
+.calendar-grid .booked{
+  position:absolute; inset:0; background:rgba(220,53,69,.18);
+  border:1px dashed rgba(220,53,69,.5); border-radius:.5rem;
+}
+.calendar-grid .todayMark{
+  position:absolute; inset:auto auto .35rem .35rem;
+  background:rgba(13,110,253,.15); padding:.1rem .4rem; border-radius:.35rem;
+  font-size:.75rem; font-weight:600;
+}
+.legend{display:inline-block; width:14px; height:14px; border-radius:3px; margin-right:.35rem; vertical-align:-2px}
+.legend.booked{ background:rgba(220,53,69,.18); border:1px dashed rgba(220,53,69,.5); }
+.legend.today{ background:rgba(13,110,253,.15); }
+</style>
+
+<script>
+const $ = s => document.querySelector(s);
+
+function ymd(d){ return d.toISOString().slice(0,10); }
+
+function monthBoundsFromInput(val){ // 'YYYY-MM' -> [Date start, Date endExclusive]
+  const [y,m] = (val||"").split("-").map(Number);
+  const start = isNaN(y)? new Date(): new Date(y, m-1, 1);
+  const end   = new Date(start.getFullYear(), start.getMonth()+1, 1);
+  return [start, end];
+}
+
+function makeDays(start, end){ // Date objects
+  const days = [];
+  for(let d=new Date(start); d<end; d.setDate(d.getDate()+1)){
+    days.push(new Date(d));
+  }
+  return days;
+}
+
+function renderCalendar(container, monthStart, monthEnd, events){
+  const days = makeDays(monthStart, monthEnd);
+  const firstWeekPad = (days[0].getDay()+6)%7; // make Monday-first; tweak if Sunday-first
+  container.innerHTML = "";
+
+  // headers
+  const headers = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  headers.forEach(h=>{
+    const hd=document.createElement("div");
+    hd.className="text-center fw-semibold text-muted";
+    hd.textContent=h;
+    container.appendChild(hd);
+  });
+
+  // pad with blanks to align first day
+  for(let i=0;i<firstWeekPad;i++){
+    const pad=document.createElement("div");
+    container.appendChild(pad);
+  }
+
+  // booked map (inclusive of check-in .. check_out-1)
+  const bookedSet = new Set();
+  events.forEach(ev=>{
+    const s = new Date(ev.start), e = new Date(ev.end);
+    for(let d=new Date(s); d<e; d.setDate(d.getDate()+1)){
+      bookedSet.add(ymd(d));
+    }
+  });
+
+  const todayStr = ymd(new Date());
+
+  days.forEach(d=>{
+    const cell=document.createElement("div");
+    cell.className="cell position-relative";
+    cell.innerHTML = `<div class="day">${d.getDate()}</div>`;
+    const key = ymd(d);
+    if(bookedSet.has(key)){
+      const layer=document.createElement("div"); layer.className="booked"; cell.appendChild(layer);
+    }
+    if(key===todayStr){
+      const tm=document.createElement("div"); tm.className="todayMark"; tm.textContent="Today"; cell.appendChild(tm);
+    }
+    container.appendChild(cell);
+  });
+}
+
+async function loadCalendar(){
+  const rid = $("#roomSel").value;
+  const ym  = $("#monthSel").value; // YYYY-MM
+  if(!rid){ alert("Please select a room."); return; }
+
+  const url = `{% url 'api_room_calendar' %}?room=${encodeURIComponent(rid)}${ym?`&ym=${ym}`:""}`;
+  $("#calendar").innerHTML = "<div class='text-muted'>Loading…</div>";
+  try{
+    const r = await fetch(url); const j = await r.json();
+    const ms = new Date(j.month_start), me = new Date(j.month_end);
+
+    // Header
+    const monthName = ms.toLocaleString(undefined,{month:"long", year:"numeric"});
+    $("#monthHeader").textContent = monthName;
+
+    // Grid (include weekday headers)
+    const grid = $("#calendar");
+    grid.classList.add("calendar-grid");
+    // clear and add headers (done in render)
+    grid.innerHTML="";
+    renderCalendar(grid, ms, me, j.events||[]);
+
+    // Snapshot
+    $("#snapNextFree").textContent = "Next free: " + (j.next_free || "—");
+
+    // Upcoming
+    const ul=$("#upcomingList");
+    const rows=(j.upcoming||[]);
+    ul.innerHTML = rows.length ? rows.map(x=>`
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <div class="fw-semibold">${x.guest||"—"}</div>
+          <div class="text-muted small">${x.in} → ${x.out}</div>
+        </div>
+        <span class="badge ${x.status==='CHECKED_IN'?'bg-success':x.status==='RESERVED'?'bg-info':x.status==='CHECKED_OUT'?'bg-secondary':'bg-danger'}">
+          ${x.status.replace('_',' ')}
+        </span>
+      </li>`).join("")
+      : `<li class="list-group-item text-muted">No upcoming bookings</li>`;
+  }catch(e){
+    $("#calendar").innerHTML = "<div class='text-danger'>Failed to load.</div>";
+  }
+}
+
+// controls
+$("#btnLoad").addEventListener("click", loadCalendar);
+$("#btnReset").addEventListener("click", ()=>{
+  $("#roomSel").value="";
+  $("#monthSel").value="";
+  $("#calendar").innerHTML="";
+  $("#monthHeader").textContent="";
+  $("#upcomingList").innerHTML="";
+  $("#snapNextFree").textContent="Next free: —";
+});
+</script>
+{% endblock %}

@@ -1,0 +1,548 @@
+{% extends layout_path %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Booking List{% endblock %}
+
+{% block content %}
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <div id="toastStack" class="position-fixed" style="z-index:1080; right:1rem; top:1rem;"></div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0">{{ page_title }}</h4>
+    <div class="d-flex gap-2">
+      <a href="{% url 'booking_create' %}" class="btn btn-success">
+        <i class="ti ti-plus icon-sm me-1"></i> Add Booking
+      </a>
+      <a
+        href="{% url 'booking_export_csv' %}{% if preserved_qs %}?{{ preserved_qs }}{% endif %}"
+        class="btn btn-outline-primary"
+      >
+        <i class="ti ti-download icon-sm me-1"></i> Export CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        <!-- Search -->
+        <div class="col-md-2">
+          <label class="form-label mb-1">Search</label>
+          <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Guest / Room / Category">
+        </div>
+
+        <!-- Room -->
+        <div class="col-md-2">
+          <label class="form-label mb-1">Room</label>
+          <select name="room" class="form-select">
+            <option value="">All Rooms</option>
+            {% for r in rooms %}
+              <option value="{{ r.id }}" {% if filter_room|default:''|stringformat:"s" == r.id|stringformat:"s" %}selected{% endif %}>
+                {{ r.room_number }}{% if r.category %} — {{ r.category.name }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-2">
+          <label class="form-label mb-1">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All</option>
+            {% for val,label in status_choices %}
+              <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Check-in Range -->
+        <div class="col-md-2">
+          <label class="form-label mb-1">Check-in From</label>
+          <input type="date" name="ci_start" value="{{ ci_start }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1">Check-in To</label>
+          <input type="date" name="ci_end" value="{{ ci_end }}" class="form-control">
+        </div>
+
+        <!-- Check-out Range -->
+        <div class="col-md-2">
+          <label class="form-label mb-1">Check-out From</label>
+          <input type="date" name="co_start" value="{{ co_start }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1">Check-out To</label>
+          <input type="date" name="co_end" value="{{ co_end }}" class="form-control">
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+          <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
+            <i class="ti ti-filter me-1"></i> Filter
+          </button>
+          <a href="{% url 'booking_list' %}" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center">
+            <i class="ti ti-rotate-ccw me-1"></i> Reset
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table align-middle table-striped mb-0 bookings-table">
+          <thead class="table-light sticky-top shadow-sm">
+            <tr>
+              <th style="width:60px;">#</th>
+              <th>Guest</th>
+              <th>Company</th>
+              <th>Room</th>
+              <th>Check In</th>
+              <th>Check Out</th>
+              <th class="text-center col-discount">Discount</th>
+              <th class="text-center col-paid">Paid</th>
+              <th class="text-center">Due</th>
+              <th class="text-center">Total</th>
+              <th>Status</th>
+              <th class="text-center" style="width:120px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in bookings %}
+            <tr>
+              <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+
+              <td class="td-guest">
+                <span class="fw-semibold">{{ b.guest.full_name }}</span>
+                {% if b.notes %}
+                  <span class="chip chip--note ms-1" title="{{ b.notes|striptags }}">note</span>
+                {% endif %}
+                <br>
+                <span class="badge bg-info mt-1">{{ b.guest.phone_number }}</span>
+              </td>
+
+              <td class="td-room">
+                <span class="fw-medium">{{ b.guest.company|default:'' }}</span>
+
+              </td>
+              <td class="td-room">
+                <span class="fw-medium">{{ b.room.room_number }}</span>
+                {% if b.room.category %}
+                  <span class="chip chip--cat ms-1">{{ b.room.category.name }}</span>
+                {% endif %}
+              </td>
+
+              <td class="td-date"><span class="chip">{{ b.check_in|date:"d M Y" }}</span></td>
+              <td class="td-date"><span class="chip">{{ b.check_out|date:"d M Y" }}</span></td>
+
+              <td class="text-center col-discount">
+                <span class="money money--discount">{{ b.discount_amount|floatformat:0|intcomma }} ৳</span>
+              </td>
+              <td class="text-center col-paid">
+                <span class="money money--paid">{{ b.payment_amount|floatformat:0|intcomma }} ৳</span>
+              </td>
+
+              <td class="text-center">
+                <span class="money money--due">{{ b.due_amount|floatformat:0|intcomma }} ৳</span>
+              </td>
+              <td class="text-center">
+                <span class="money money--total">{{ b.net_amount|floatformat:0|intcomma }} ৳</span>
+              </td>
+
+              <td>
+                {% if b.status == "RESERVED" %}
+                  <span class="badge badge-status badge-reserved">Reserved</span>
+                {% elif b.status == "CHECKED_IN" %}
+                  <span class="badge badge-status badge-in">Checked In</span>
+                {% elif b.status == "CHECKED_OUT" %}
+                  <span class="badge badge-status badge-out">Checked Out</span>
+                {% elif b.status == "CANCELLED" %}
+                  <span class="badge badge-status badge-cancelled">Cancelled</span>
+                {% endif %}
+              </td>
+
+              <td class="text-center td-actions">
+
+                <a href="{% url 'booking_invoice_summary' b.id %}" target="_blank" class="btn btn-outline-primary btn-sm">
+  <i class="ti ti-file-text"></i> Booking Invoice
+</a>
+
+                <!-- View -->
+<a href="{% url 'booking_detail' b.pk %}" class="text-info action-icon" title="View">
+  <i class="ti ti-eye"></i>
+</a>
+
+<!-- Edit -->
+<a href="{% url 'booking_edit' b.pk %}" class="action-icon text-warning" title="Edit">
+  <i class="ti ti-edit icon-sm"></i>
+</a>
+
+<!-- NEW: Checkout -->
+<button
+  type="button"
+  class="action-icon text-dark bg-transparent border-0 p-0 checkout-btn"
+  title="Checkout"
+  data-bs-toggle="modal"
+  data-bs-target="#checkoutModal"
+  data-booking-id="{{ b.pk }}"
+  data-guest="{{ b.guest.full_name|default:'Guest' }}"
+  data-due="{{ b.due_amount }}"
+  data-url="{% url 'booking_checkout' b.pk %}"
+  {% if b.due_amount|default:0 <= 0 %}disabled{% endif %}
+>
+  <i class="ti ti-credit-card icon-sm"></i>
+</button>
+
+<!-- Delete -->
+<form action="{% url 'booking_delete' b.pk %}" method="post" class="d-inline"
+      onsubmit="return confirm('Delete this booking?');">
+  {% csrf_token %}
+  <button type="submit" class="action-icon text-danger border-0 bg-transparent p-0" title="Delete">
+    <i class="ti ti-trash icon-sm"></i>
+  </button>
+</form>
+
+                  {% comment %} <a href="{% url 'booking_detail' b.pk %}" class="text-info action-icon" title="View">
+                    <i class="ti ti-eye"></i>
+                  </a>
+
+
+                <a href="{% url 'booking_edit' b.pk %}" class="action-icon text-warning" title="Edit">
+                  <i class="ti ti-edit icon-sm"></i>
+                </a>
+                <form action="{% url 'booking_delete' b.pk %}" method="post" class="d-inline"
+                      onsubmit="return confirm('Delete this booking?');">
+                  {% csrf_token %}
+                  <button type="submit" class="action-icon text-danger border-0 bg-transparent p-0" title="Delete">
+                    <i class="ti ti-trash icon-sm"></i>
+                  </button>
+                </form> {% endcomment %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="11" class="text-center text-muted py-3">No bookings found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if is_paginated %}
+  <nav class="mt-3">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if preserved_qs %}&{{ preserved_qs }}{% endif %}">«</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">«</span></li>
+      {% endif %}
+
+      {% for i in paginator.page_range %}
+        {% if page_obj.number == i %}
+          <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ i }}{% if preserved_qs %}&{{ preserved_qs }}{% endif %}">{{ i }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if preserved_qs %}&{{ preserved_qs }}{% endif %}">»</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">»</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+
+
+<style>
+/* --- Table readability --- */
+.bookings-table thead th{
+  position: sticky; top: 0; z-index: 1;
+  background: #fff; /* solid bg for contrast over shadow */
+  text-transform: uppercase;
+  font-size: .78rem;
+  letter-spacing: .02em;
+  color: #6c757d;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+.bookings-table tbody tr{
+  --row-bg: #fff;
+  background: var(--row-bg);
+}
+.bookings-table tbody tr:nth-child(odd){
+  --row-bg: #fbfbfe;
+}
+.bookings-table tbody tr:hover{
+  --row-bg: #f3f6ff;
+}
+.bookings-table td, .bookings-table th{
+  padding: .9rem .85rem;
+  vertical-align: middle;
+}
+
+/* Columns */
+.td-guest { max-width: 260px; }
+.td-room  { max-width: 220px; }
+.td-date  { white-space: nowrap; }
+.td-actions{ white-space: nowrap; }
+
+/* Money look: tabular digits, clearer spacing */
+.money{
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .2px;
+}
+.money--discount{ color: #0ea5e9; }   /* info */
+.money--paid    { color: #16a34a; }   /* success */
+.money--total   { color: #111827; font-weight: 600; } /* strong */
+.money--due{
+  background: #fff7e6;
+  color: #b45309;
+  border: 1px solid #f4d7a1;
+  padding: .18rem .45rem;
+  border-radius: .375rem;
+  font-weight: 600;
+}
+
+/* Chips / badges */
+.chip{
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .1rem .45rem; border-radius: 999px;
+  font-size: .72rem; line-height: 1;
+  border: 1px solid var(--chip-border, #e5e7eb);
+  color: var(--chip-fg, #374151);
+  background: var(--chip-bg, #f8fafc);
+}
+.chip--cat { --chip-bg:#ecfeff; --chip-border:#bae6fd; --chip-fg:#0369a1; }
+.chip--note{ --chip-bg:#f3f4f6; --chip-border:#e5e7eb; --chip-fg:#4b5563; }
+
+/* Status pills with better contrast */
+.badge-status{ padding: .22rem .55rem; font-weight: 600; }
+.badge-reserved   { background:#e0f2fe; color:#075985; }
+.badge-in         { background:#dcfce7; color:#166534; }
+.badge-out        { background:#e5e7eb; color:#374151; }
+.badge-cancelled  { background:#fee2e2; color:#991b1b; }
+
+/* Action icons */
+.icon-sm{ font-size:1.25rem; }
+.action-icon i.ti{ transition: .18s; opacity:.88; }
+.action-icon:hover i.ti{ opacity:1; transform: translateY(-1px); }
+
+/* Mobile tweaks: hide less important cols on xs */
+@media (max-width: 768px){
+  .col-discount, .col-paid { display: none; }
+}
+</style>
+
+<script>
+  // auto-close Bootstrap alerts
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(a => new bootstrap.Alert(a).close());
+  }, 3500);
+</script>
+
+<!-- Checkout Modal (shared) -->
+<div class="modal fade" id="checkoutModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="checkoutForm" class="modal-content" autocomplete="off">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="ti ti-credit-card me-1"></i> Payment and Checkout
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body row g-3">
+        <div class="col-12">
+          <div class="small text-info" id="coSummary">Booking —</div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Amount (BDT)</label>
+          <input type="number" class="form-control" id="coAmount" name="amount" min="0" step="1" placeholder="0">
+          <div class="form-text">Default = current Due. You can pay partial (≤ Due).</div>
+        </div>
+
+        <div class="col-6">
+          <label class="form-label">Method</label>
+          <select class="form-select" name="method" id="coMethod">
+            <option value="CASH" selected>Cash</option>
+            <option value="CARD">Card</option>
+            <option value="BKASH">bKash</option>
+            <option value="NAGAD">Nagad</option>
+            <option value="BANK">Bank Transfer</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <div class="col-6">
+          <label class="form-label">Reference</label>
+          <input type="text" class="form-control" name="txn_ref" placeholder="Slip / Txn ID (optional)">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Note</label>
+          <input type="text" class="form-control" name="note" maxlength="255" placeholder="Checkout payment">
+        </div>
+
+        <div class="col-12">
+          <div id="coErrors" class="text-danger small"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-dark">
+          <i class="ti ti-check"></i> Confirm
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Helpers
+  const fmtBDT = (n)=> `৳ ${Number(n||0).toLocaleString('en-US')}`;
+  const pickNum = (s)=> parseInt(String(s||'').replace(/[^\d\-]/g,''), 10) || 0;
+
+  const modalEl   = document.getElementById('checkoutModal');
+  const form      = document.getElementById('checkoutForm');
+  const amountInp = document.getElementById('coAmount');
+  const errBox    = document.getElementById('coErrors');
+  const coSummary = document.getElementById('coSummary');
+
+  let current = { id:null, url:null, row:null, due:0, guest:'Guest' };
+
+  // open: set defaults
+  document.querySelectorAll('.checkout-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const tr = e.currentTarget.closest('tr');
+      current = {
+        id:  e.currentTarget.dataset.bookingId,
+        url: e.currentTarget.dataset.url,
+        row: tr,
+        due: parseInt(e.currentTarget.dataset.due||'0',10) || 0,
+        guest: e.currentTarget.dataset.guest || 'Guest'
+      };
+      // read DOM if due changed on page
+      const dueCell = tr?.querySelector('.money--due');
+      if(dueCell){ current.due = pickNum(dueCell.textContent); }
+
+      amountInp.value = current.due;   // default = due
+      coSummary.textContent = `#${current.id} — ${current.guest} — Due: ${fmtBDT(current.due)}`;
+      errBox.textContent = '';
+    });
+  });
+
+  function csrf(){
+    const el = form.querySelector('[name=csrfmiddlewaretoken]') || document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
+  }
+
+  form?.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    errBox.textContent = '';
+
+    const pay = parseInt(amountInp.value||'0', 10) || 0;
+    if(pay < 0){ errBox.textContent = 'Amount cannot be negative.'; return; }
+    if(pay > current.due){ errBox.textContent = 'Amount cannot exceed current due.'; return; }
+
+    const fd = new FormData(form);
+    try{
+      const res = await fetch(current.url, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf() },
+        body: fd
+      });
+      const data = await res.json();
+
+      if(!res.ok || !data.ok){
+        const errs = data.errors || {};
+        errBox.innerHTML = Object.entries(errs).map(([k,v])=>`<div>• ${k}: ${Array.isArray(v)? v.join(', '): v}</div>`).join('');
+        return;
+      }
+
+      // update row UI: paid/due
+      if(current.row){
+        const paidEl = current.row.querySelector('.money--paid');
+        const dueEl  = current.row.querySelector('.money--due');
+        if(paidEl) paidEl.textContent = fmtBDT(data.total_paid);
+        if(dueEl)  dueEl.textContent  = fmtBDT(data.balance_due);
+
+        // status pill
+        const statusTd = current.row.querySelector('td:nth-last-child(2)'); // status কলাম
+        if(statusTd){
+          statusTd.innerHTML = data.checked_out
+            ? '<span class="badge badge-status badge-out">Checked Out</span>'
+            : '<span class="badge badge-status badge-in">Checked In</span>';
+        }
+
+        // Checkout বাটন disable if fully paid
+        const coBtn = current.row.querySelector('.checkout-btn');
+        if(coBtn){ coBtn.disabled = data.balance_due <= 0; coBtn.dataset.due = String(data.balance_due); }
+      }
+
+      // close modal
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.hide();
+
+      // Show toast from server-provided flash
+      if (data.flash && typeof showToast === 'function') {
+        showToast(data.flash.message || 'Saved.', data.flash.level || 'success');
+      }
+
+      // Optional toast: যদি আপনার পেজে showToast থাকে
+      {% comment %} if(typeof showToast === 'function'){
+        showToast(data.checked_out ? "Checked out successfully! ✅" : "Partial payment recorded. ✅", "success");
+      } {% endcomment %}
+    }catch(err){
+      console.error(err);
+      errBox.textContent = 'Network error. Please try again.';
+    }
+  });
+
+  // auto-close alerts already exists in your page; রাখা হলো
+})();
+</script>
+
+<script>
+  function showToast(message, variant = "success", delay = 3500){
+    const stack = document.getElementById('toastStack');
+    const el = document.createElement('div');
+    el.className = `toast text-bg-${variant} border-0 shadow`;
+    el.setAttribute('role','alert'); el.setAttribute('aria-live','assertive'); el.setAttribute('aria-atomic','true');
+    el.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>`;
+    stack.appendChild(el);
+    const t = new bootstrap.Toast(el, { delay });
+    t.show();
+    el.addEventListener('hidden.bs.toast', ()=> el.remove());
+  }
+</script>
+{% endblock %}

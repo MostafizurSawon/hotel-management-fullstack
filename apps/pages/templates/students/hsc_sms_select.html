@@ -1,0 +1,208 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="flex-grow-1 container-p-y">
+
+  {# ——— One-time delivery summary ——— #}
+  {% if last_sms %}
+    <div class="alert alert-info border-0 shadow-sm mb-3" role="alert">
+      <div class="d-flex align-items-center mb-1">
+        <i class="ti ti-message-circle-check me-2"></i>
+        <strong>Last SMS Summary</strong>
+      </div>
+      <div class="small">
+        <span class="badge bg-success me-2">Sent: {{ last_sms.sent }}</span>
+        <span class="badge bg-warning text-dark">Failed: {{ last_sms.failed }}</span>
+      </div>
+      {% if last_sms.sample %}
+        <hr class="my-2" />
+        <ul class="small ps-3 mb-0">
+          {% for line in last_sms.sample %}
+            <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {# ——— Django messages ——— #}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# ——— Page header ——— #}
+  <div class="d-flex justify-content-between align-items-start align-items-md-center flex-column flex-md-row mb-3">
+    <div class="mb-2 mb-md-0">
+      <h4 class="mb-1">{{ page_title }}</h4>
+      <p class="text-muted mb-0">{{ page_subtitle }}</p>
+      <div class="mt-2">
+        <a class="ms-2 btn btn-sm btn-primary" href="https://sms.jbdit.net/login" target="_blank" rel="noopener noreferrer">See Balance</a>
+        {% if session %}
+          <span class="badge bg-label-success">
+            <i class="ti ti-calendar-check me-1"></i> Active Session: {{ session }}
+          </span>
+        {% else %}
+          <span class="badge bg-label-danger">
+            <i class="ti ti-alert-triangle me-1"></i> No active session set — set it from Admissions → “Set Session”
+          </span>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <div class="text-muted small">
+      <i class="ti ti-users-group me-1"></i>
+      Showing up to <strong>500</strong> students
+    </div>
+  </div>
+
+  {# ——— Filters ——— #}
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-md-3">
+          <label class="form-label">Group</label>
+          {{ form.group }}
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Search</label>
+          <div class="input-group">
+            {{ form.search }}
+            <button class="btn btn-primary" type="submit">
+              <i class="ti ti-search me-1"></i> Apply
+            </button>
+          </div>
+        </div>
+        <div class="col-12 col-md-3 text-md-end">
+          <a href="{% url 'hsc_sms_select' %}" class="btn btn-outline-secondary">
+            <i class="ti ti-eraser me-1"></i> Clear
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ——— Selection + Table ——— #}
+  <form method="post" action="{% url 'hsc_sms_select' %}">
+    {% csrf_token %}
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+          <div class="mb-2 mb-md-0">
+            <strong>{{ students|length }}</strong> student(s) found
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div class="form-check m-0">
+              <input class="form-check-input" type="checkbox" id="select-all" checked>
+              <label class="form-check-label" for="select-all">Select / Unselect All</label>
+            </div>
+            <div class="text-muted small">
+              Selected: <span id="selected-count">{{ students|length }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light position-sticky top-0" style="z-index: 1;">
+            <tr>
+              <th style="width:48px;">#</th>
+              <th>Roll</th>
+              <th>Name</th>
+              <th>Father</th>
+              <th>Group</th>
+              <th>Mobile</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+              <tr>
+                <td>
+                  <div class="form-check m-0">
+                    <input class="form-check-input row-check" type="checkbox" name="ids" value="{{ s.id }}" checked>
+                  </div>
+                </td>
+                <td><span class="font-monospace">{{ s.add_class_roll|default:"" }}</span></td>
+                <td class="fw-semibold">{{ s.add_name }}</td>
+                <td class="">{{ s.add_father }}</td>
+                <td>
+                  {% if s.add_admission_group == "science" %}
+                    <span class="badge bg-label-success">Science</span>
+                  {% elif s.add_admission_group == "commerce" %}
+                    <span class="badge bg-label-warning text-dark">Business Studies</span>
+                  {% elif s.add_admission_group == "arts" %}
+                    <span class="badge bg-label-info">Humanities</span>
+                  {% else %}
+                    <span class="badge bg-label-secondary">{{ s.get_add_admission_group_display }}</span>
+                  {% endif %}
+                </td>
+
+
+                <td>
+                  {% if s.add_mobile %}
+                    <a href="tel:{{ s.add_mobile }}" class="text-body text-decoration-none">
+                      <i class="ti ti-phone me-1 text-muted"></i>{{ s.add_mobile }}
+                    </a>
+                  {% else %}
+                    <span class="text-muted"><i class="ti ti-phone-off me-1"></i>N/A</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                  <i class="ti ti-users-off me-1"></i> No students match the current filter.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card-footer bg-transparent d-flex justify-content-end gap-2">
+        <a href="{% url 'hsc_sms_select' %}" class="btn btn-light">
+          <i class="ti ti-refresh me-1"></i> Reset
+        </a>
+        <button class="btn btn-primary" type="submit">
+          Next <i class="ti ti-arrow-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+  </form>
+
+</div>
+
+{# ——— JS: select-all + live count ——— #}
+<script>
+  (function () {
+    const selectAll = document.getElementById('select-all');
+    const checks = Array.from(document.querySelectorAll('.row-check'));
+    const countEl = document.getElementById('selected-count');
+
+    function updateCount() {
+      const c = checks.filter(ch => ch.checked).length;
+      if (countEl) countEl.textContent = c;
+    }
+    updateCount();
+
+    if (selectAll) {
+      selectAll.addEventListener('change', () => {
+        const checked = selectAll.checked;
+        checks.forEach(ch => ch.checked = checked);
+        updateCount();
+      });
+    }
+    checks.forEach(ch => ch.addEventListener('change', updateCount));
+  })();
+</script>
+{% endblock %}

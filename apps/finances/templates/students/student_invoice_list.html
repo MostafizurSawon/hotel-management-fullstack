@@ -1,0 +1,295 @@
+{% extends layout_path %}
+{% load static %}
+{% load humanize %}
+{% block title %}Students Manual Payment{% endblock %}
+{% block content %}
+
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card my-4">
+    <!-- 🔍 Filter & Search -->
+    <form method="get" class="row g-2 p-4 align-items-end">
+
+      <!-- Search -->
+      <div class="col-md-3">
+        <label>Search</label>
+        <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Student name or phone">
+      </div>
+
+      <!-- Purpose Filter -->
+      <div class="col-md-2">
+        <label>Purpose</label>
+        <select name="purpose" class="form-select">
+          <option value="">All</option>
+          {% for pur in purposes %}
+            <option value="{{ pur.id }}" {% if pur.id|stringformat:"s" == request.GET.purpose %}selected{% endif %}>{{ pur.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Group Filter -->
+      <div class="col-md-2">
+        <label>Group</label>
+        <select name="group" class="form-select">
+          <option value="">All</option>
+          {% for g in groups %}
+            <option value="{{ g }}" {% if g == request.GET.group %}selected{% endif %}>{{ g|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Is Paid Filter -->
+      <div class="col-md-2">
+        <label>Paid Status</label>
+        <select name="is_paid" class="form-select">
+          <option value="">All</option>
+          <option value="true" {% if request.GET.is_paid == 'true' %}selected{% endif %}>Paid</option>
+          <option value="false" {% if request.GET.is_paid == 'false' %}selected{% endif %}>Unpaid</option>
+        </select>
+      </div>
+
+      <!-- Date Range -->
+      <div class="col-md-3">
+        <label>Assigned From</label>
+        <input type="date" name="assigned_from" value="{{ request.GET.assigned_from }}" class="form-control">
+      </div>
+      {% comment %} <div class="col-md-3">
+        <label>To</label>
+        <input type="date" name="assigned_to" value="{{ request.GET.assigned_to }}" class="form-control">
+      </div> {% endcomment %}
+
+      <!-- Buttons -->
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">🔍 Search</button>
+        <a href="{% url 'student-invoice-list' %}" class="btn btn-secondary">Reset</a>
+      </div>
+    </form>
+
+  </div>
+
+  <!-- 📄 Student Invoice Table -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">Student Invoices</h5>
+    </div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Actions</th>
+            <th>Student</th>
+            <th>Mobile</th>
+            <th>Roll</th>
+            <th>Group</th>
+            <th>Invoice Purpose</th>
+            <th>Amount</th>
+            <th>Note</th>
+            <th>Is Paid</th>
+            <th>Assigned At</th>
+
+
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in student_invoices %}
+          <tr>
+            {% comment %} <td>{{ entry.invoice.id }}</td> {% endcomment %}
+            <td>{{ forloop.counter }}</td>
+            <td class="text-center d-flex gap-2 justify-content-center">
+              <!-- 🖨️ Print/Details Button -->
+              <a href="{% if entry.is_paid %}{% url 'student-invoice-detail' entry.id %}{% else %}#{% endif %}"
+                class="btn btn-sm btn-outline-info {% if not entry.is_paid %}disabled{% endif %}"
+                target="_blank"
+                title="Details / Print">
+                <i class="fas fa-print"></i>
+              </a>
+
+
+
+              <!-- ✏️ Edit Button (modal trigger) -->
+              <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ entry.id }}" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+            </td>
+
+            <td>{{ entry.student.add_name }}</td>
+            <td>{{ entry.student.add_mobile }}</td>
+            <td>{{ entry.student.add_class_roll }}</td>
+            <td>{{ entry.student.get_add_admission_group_display }}</td>
+            <td>{{ entry.invoice.invoice_purpose.name }}</td>
+            {% comment %} <td>
+              {{ entry.invoice.amount|intcomma }} ৳
+              <br>
+              <small>( Waiver: {{ entry.discount_amount|intcomma }} ৳ ) </small>
+
+            </td> {% endcomment %}
+            <td>
+              {% if entry.discount_amount and entry.discount_amount > 0 %}
+                <span class="text-dark fw-bold">{{ entry.invoice.amount|intcomma }} ৳</span>
+                <br>
+                <small class="text-dark">(Waiver: {{ entry.discount_amount|intcomma }} ৳)</small>
+                <br>
+                <strong class="text-primary">= {{ entry.payable_amount|intcomma }} ৳</strong>
+              {% else %}
+                <span class="text-primary fw-bold">{{ entry.invoice.amount|intcomma }} ৳</span>
+              {% endif %}
+            </td>
+            
+            
+            <td>{{ entry.note|default:"-" }}</td>
+            <td>
+              {% if entry.is_paid %}
+                <span class="badge bg-success">Paid</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Unpaid</span>
+              {% endif %}
+            </td>
+            <td>{{ entry.assigned_at|date:"d M Y" }}</td>
+
+          </tr>
+
+          <!-- ✏️ Edit Modal -->
+          <div class="modal fade" id="editModal{{ entry.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <form method="post" action="{% url 'student-invoice-update' entry.id %}">
+                  {% csrf_token %}
+                  <div class="modal-header">
+                    <h5 class="modal-title">Edit Student Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+
+                    <div class="mb-3">
+                      <label class="form-label">Amount</label>
+                      <input type="number" id="invoiceAmount{{ entry.id }}" class="form-control" value="{{ entry.invoice.amount }}" readonly>
+                    </div>
+
+
+                    <div class="mb-3">
+                      <label class="form-label">Note</label>
+                      <textarea name="note" class="form-control" rows="2">{{ entry.note }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Payment Method</label>
+                      <select name="add_payment_method" class="form-select">
+                        <option value="">Select a method</option>
+                        <option value="office" {% if entry.add_payment_method == 'office' %}selected{% endif %}>Office Cash</option>
+                        <option value="bkash" {% if entry.add_payment_method == 'bkash' %}selected{% endif %}>Bkash</option>
+                        <option value="rocket" {% if entry.add_payment_method == 'rocket' %}selected{% endif %}>Rocket</option>
+                        <option value="nagad" {% if entry.add_payment_method == 'nagad' %}selected{% endif %}>Nagad</option>
+                        <option value="bank" {% if entry.add_payment_method == 'bank' %}selected{% endif %}>Bank</option>
+                        <option value="others" {% if entry.add_payment_method == 'others' %}selected{% endif %}>Others</option>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Waiver Amount</label>
+                      <input type="number" name="discount_amount" class="form-control" value="{{ entry.discount_amount }}">
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Payable Amount (after discount)</label>
+                      <input type="text" id="payableAmount{{ entry.id }}" class="form-control" readonly>
+                    </div>
+
+
+                    <div class="mb-3">
+                      <label class="form-label">Discount Reason</label>
+                      <input type="text" name="discount_reason" class="form-control" value="{{ entry.discount_reason }}">
+                    </div>
+
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="is_paid" {% if entry.is_paid %}checked{% endif %}>
+                      <label class="form-check-label">Mark as Paid</label>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Save</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+           <script>
+              document.addEventListener('DOMContentLoaded', function () {
+                const modalId = "{{ entry.id }}";
+                const amountInput = document.querySelector(`#invoiceAmount${modalId}`);
+                const discountInput = document.querySelector(`#editModal${modalId} input[name="discount_amount"]`);
+                const payableField = document.querySelector(`#payableAmount${modalId}`);
+
+                function updatePayableAmount() {
+                  const amount = parseFloat(amountInput.value) || 0;
+                  const discount = parseFloat(discountInput.value) || 0;
+                  const payable = Math.max(0, amount - discount);
+                  payableField.value = payable.toLocaleString('en-US') + " ৳";
+                }
+
+                discountInput.addEventListener('input', updatePayableAmount);
+                updatePayableAmount();
+              });
+            </script>
+
+
+          </div>
+
+
+          {% empty %}
+          <tr><td colspan="7" class="text-center">No student invoices found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- 🔢 Pagination -->
+      <div class="card-footer d-flex justify-content-end">
+        {% if is_paginated %}
+          <nav>
+            <ul class="pagination pagination-sm">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.session %}session={{ request.GET.session }}&{% endif %}{% if request.GET.program %}program={{ request.GET.program }}&{% endif %}{% if request.GET.group %}group={{ request.GET.group }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                    «
+                  </a>
+                </li>
+              {% endif %}
+
+              {% for i in paginator.page_range %}
+                {% if i <= 2 or i > paginator.num_pages|add:'-2' or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+                  <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                    <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.session %}session={{ request.GET.session }}&{% endif %}{% if request.GET.program %}program={{ request.GET.program }}&{% endif %}{% if request.GET.group %}group={{ request.GET.group }}&{% endif %}page={{ i }}">{{ i }}</a>
+
+                  </li>
+                {% elif i == 3 or i == paginator.num_pages|add:'-3' %}
+                  <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+              {% endfor %}
+
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.session %}session={{ request.GET.session }}&{% endif %}{% if request.GET.program %}program={{ request.GET.program }}&{% endif %}{% if request.GET.group %}group={{ request.GET.group }}&{% endif %}page={{page_obj.next_page_number }}">
+                    »
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}Add New Guest{% endblock %}
+
+{% block content %}
+
+<style>
+.companion-item { background: var(--bs-light-bg-subtle, #f8f9fa); }
+.companion-item .form-control { min-height: 36px; }
+</style>
+
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header">
+      <h4 class="card-title">{{ page_title }}</h4>
+    </div>
+
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" class="row g-3">
+        {% csrf_token %}
+
+        <div class="col-md-3">
+          <label class="form-label">Full Name</label>
+          {{ form.full_name }}
+          {% if form.full_name.errors %}
+            <div class="invalid-feedback d-block">{{ form.full_name.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Mobile Number</label>
+          {{ form.phone_number }}
+          {% if form.phone_number.errors %}
+            <div class="invalid-feedback d-block">{{ form.phone_number.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Father Name</label>
+          {{ form.father_name }}
+          {% if form.father_name.errors %}
+            <div class="invalid-feedback d-block">{{ form.father_name.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">NID/Passport</label>
+          {{ form.nid_passport }}
+          {% if form.nid_passport.errors %}
+            <div class="invalid-feedback d-block">{{ form.nid_passport.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Age</label>
+          {{ form.age }}
+          {% if form.age.errors %}
+            <div class="invalid-feedback d-block">{{ form.age.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <div class="invalid-feedback d-block">{{ form.email.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Profession</label>
+          {{ form.profession }}
+          {% if form.profession.errors %}
+            <div class="invalid-feedback d-block">{{ form.profession.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Your Company Name</label>
+          {{ form.company }}
+          {% if form.company.errors %}
+            <div class="invalid-feedback d-block">{{ form.company.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Nationality</label>
+          {{ form.nationality }}
+          {% if form.nationality.errors %}
+            <div class="invalid-feedback d-block">{{ form.nationality.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-8">
+          <label class="form-label">Address</label>
+          {{ form.address }}
+          {% if form.address.errors %}
+            <div class="invalid-feedback d-block">{{ form.address.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Guest Photo</label>
+          {{ form.photo }}
+          {% if form.photo.errors %}
+            <div class="invalid-feedback d-block">{{ form.photo.errors.as_text|cut:"*" }}</div>
+          {% endif %}
+        </div>
+
+        <hr class="my-3">
+
+        <div class="text-center mb-2">
+          <h5 class="mb-2">Additional Guests</h5>
+          <button type="button" id="add-companion-btn" class="btn btn-sm btn-primary">
+            + Add Additional Guest
+          </button>
+        </div>
+
+        <!-- Management form (required by Django formsets) -->
+        {{ companion_formset.management_form }}
+        {% if companion_formset.non_form_errors %}
+          <div class="alert alert-danger py-2">{{ companion_formset.non_form_errors }}</div>
+        {% endif %}
+
+        <div id="companions-formset" class="row g-2">
+          {% for cform in companion_formset.forms %}
+            <div class="companion-item border rounded p-2 position-relative">
+              {% if cform.DELETE %} {{ cform.DELETE }} {% endif %}
+              {% if cform.id %} {{ cform.id }} {% endif %}
+
+              <!-- Row 1 -->
+              <div class="row g-2">
+                <div class="col-md-3">{{ cform.name }}</div>
+                <div class="col-md-2">{{ cform.age }}</div>
+                <div class="col-md-3">{{ cform.nid_passport }}</div>
+                <div class="col-md-3">{{ cform.email }}</div>
+              </div>
+              <!-- Row 2 -->
+              <div class="row g-2 mt-1">
+                <div class="col-md-4">{{ cform.father_name }}</div>
+                <div class="col-md-4">{{ cform.phone_number }}</div>
+                <div class="col-md-3">{{ cform.relation }}</div>
+              </div>
+
+              <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                      onclick="removeCompanion(this)">✕</button>
+
+              <!-- per-field errors -->
+              {% for field in cform.visible_fields %}
+                {% if field.errors %}
+                  <div class="invalid-feedback d-block small">{{ field.errors.as_text|cut:"*" }}</div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% empty %}
+            <!-- start empty -->
+          {% endfor %}
+        </div>
+
+        <!-- Hidden empty form template to clone -->
+        <div id="companion-empty-form" class="d-none">
+          <div class="companion-item border rounded p-2 position-relative">
+            <!-- Row 1 -->
+            <div class="row g-2">
+              <div class="col-md-3">__name__</div>
+              <div class="col-md-2">__age__</div>
+              <div class="col-md-3">__nid__</div>
+              <div class="col-md-3">__email__</div>
+            </div>
+            <!-- Row 2 -->
+            <div class="row g-2 mt-1">
+              <div class="col-md-4">__father__</div>
+              <div class="col-md-4">__phone__</div>
+              <div class="col-md-3">__relation__</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                    onclick="removeCompanion(this)">✕</button>
+          </div>
+        </div>
+
+        {% comment %} <div class="col-12 mt-2">
+          <button class="btn btn-primary" type="submit">Add New Guest</button>
+        </div> {% endcomment %}
+
+        <div class="col-12 mt-2">
+          {% if form.instance.pk %}
+            <button class="btn btn-warning" type="submit">Update Guest</button>
+          {% else %}
+            <button class="btn btn-primary" type="submit">Add New Guest</button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto-close alerts
+  setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(a => new bootstrap.Alert(a).close());
+  }, 4000);
+
+  // Disable submit button while submitting
+  const form = document.querySelector("form");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      const btn = e.target.querySelector("button[type='submit']");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = "Saving...";
+      }
+    });
+  }
+</script>
+
+<script>
+(function() {
+  // map empty form fields from Django's empty_form
+  const templateMap = {
+    "__name__": `{{ companion_formset.empty_form.name }}`,
+    "__age__": `{{ companion_formset.empty_form.age }}`,
+    "__nid__": `{{ companion_formset.empty_form.nid_passport }}`,
+    "__email__": `{{ companion_formset.empty_form.email }}`,
+    "__father__": `{{ companion_formset.empty_form.father_name }}`,
+    "__phone__": `{{ companion_formset.empty_form.phone_number }}`,
+    "__relation__": `{{ companion_formset.empty_form.relation }}`,
+  };
+
+  const container = document.getElementById("companions-formset");
+  const addBtn = document.getElementById("add-companion-btn");
+  const emptyFormWrapper = document.getElementById("companion-empty-form");
+  const totalFormsInput = document.querySelector('input[name="companions-TOTAL_FORMS"]');
+
+  function htmlWithFields(tpl) {
+    let html = tpl.innerHTML;
+    for (const [k, v] of Object.entries(templateMap)) {
+      html = html.replace(k, v);
+    }
+    return html;
+  }
+
+  addBtn?.addEventListener("click", () => {
+    const currentCount = parseInt(totalFormsInput.value, 10);
+    const node = document.createElement("div");
+    node.innerHTML = htmlWithFields(emptyFormWrapper).trim();
+
+    // Replace __prefix__ by currentCount within the form HTML
+    node.innerHTML = node.innerHTML.replace(/companions-__prefix__/g, `companions-${currentCount}`);
+
+    // append to list
+    container.appendChild(node.firstElementChild);
+    totalFormsInput.value = currentCount + 1;
+  });
+
+  // Remove companion row (handles existing and new)
+  window.removeCompanion = function(btn) {
+    const item = btn.closest(".companion-item");
+    // if there's a DELETE checkbox (existing object), mark it and hide
+    const del = item.querySelector('input[type="checkbox"][name$="-DELETE"]');
+    const idField = item.querySelector('input[type="hidden"][name$="-id"]');
+
+    if (del && idField && idField.value) {
+      del.checked = true;
+      item.style.display = "none";
+      return;
+    }
+
+    // else it's a new unsaved row: remove node and decrement TOTAL_FORMS
+    item.remove();
+    const currentCount = parseInt(totalFormsInput.value, 10);
+    totalFormsInput.value = Math.max(0, currentCount - 1);
+  };
+})();
+</script>
+{% endblock %}

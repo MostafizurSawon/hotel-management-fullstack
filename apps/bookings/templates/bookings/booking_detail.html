@@ -1,0 +1,377 @@
+{% extends layout_path %}
+{% load static %}
+{% load humanize %}
+{% block title %}Booking Details{% endblock %}
+
+{% block content %}
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">{{ page_title|default:"Booking Details" }}</h4>
+    <div class="">
+      <a href="{% url 'booking_list' %}" class="btn btn-primary">
+      <i class="ti ti-plus icon-sm me-1"></i> Add Payment
+    </a>
+    <a href="{% url 'booking_list' %}" class="btn btn-outline-secondary">
+      <i class="ti ti-arrow-left icon-sm me-1"></i> Back to List
+    </a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- Guest Information -->
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold mb-4">
+          <i class="ti ti-user icon-sm me-1"></i> Guest Information
+        </div>
+        <div class="card-body">
+          <p><strong>Name:</strong> {{ booking.guest.full_name }}</p>
+          <p><strong>Phone:</strong> {{ booking.guest.phone_number|default:"—" }}</p>
+          <p><strong>Email:</strong> {{ booking.guest.email|default:"—" }}</p>
+          <p><strong>NID / Passport:</strong> {{ booking.guest.nid_passport|default:"—" }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Details -->
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-light fw-semibold mb-4">
+          <i class="ti ti-bed icon-sm me-1"></i> Room Details
+        </div>
+        <div class="card-body">
+          <p><strong>Room Number:</strong> {{ booking.room.room_number }}</p>
+          <p><strong>Category:</strong> {{ booking.room.category.name|default:"—" }}</p>
+          <p><strong>Daily Rate:</strong> ৳{{ booking.nightly_rate|default:"0" }}</p>
+          <p><strong>Status:</strong>
+            {% if booking.status == "RESERVED" %}
+              <span class="badge bg-info">Reserved</span>
+            {% elif booking.status == "CHECKED_IN" %}
+              <span class="badge bg-success">Checked In</span>
+            {% elif booking.status == "CHECKED_OUT" %}
+              <span class="badge bg-secondary">Checked Out</span>
+            {% else %}
+              <span class="badge bg-danger">Cancelled</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Summary -->
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light fw-semibold mb-4">
+          <i class="ti ti-calendar icon-sm me-1"></i> Booking Summary
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <strong>Check In:</strong> {{ booking.check_in|date:"d M Y" }}
+            </div>
+            <div class="col-md-3">
+              <strong>Check Out:</strong> {{ booking.check_out|date:"d M Y" }}
+            </div>
+            <div class="col-md-3">
+              <strong>Days:</strong> {{ booking.nights|default_if_none:0 }}
+            </div>
+            <div class="col-md-3">
+              <strong>Created At:</strong> {{ booking.created_at|date:"d M Y, h:i A" }}
+            </div>
+          </div>
+
+          <hr>
+          <div class="row g-3">
+            <div class="col-md-3"><strong>Gross:</strong> ৳{{ booking.gross_amount }}</div>
+            <div class="col-md-3"><strong>Discount:</strong> ৳{{ booking.discount_amount }}</div>
+            <div class="col-md-3"><strong>Net:</strong> ৳{{ booking.net_amount }}</div>
+            <div class="col-md-3"><strong>Paid:</strong> ৳{{ booking.payment_amount }}</div>
+          </div>
+
+          <hr>
+
+          <!-- Actions + Totals -->
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            {% comment %} <div>
+              <!-- Trigger -->
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                <i class="ti ti-cash"></i> Add Payment
+              </button>
+            </div> {% endcomment %}
+            <div class="mt-2 mt-md-0">
+              <!-- Totals area (updated by JS) -->
+              <span class="badge bg-success">
+                Total Paid: <span id="totalPaidText">৳ {{ booking.payment_amount }}</span>
+              </span>
+              <span class="badge bg-warning text-dark ms-2">
+                Due: <span id="balanceDueText">৳ {{ booking.due_amount }}</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Add Payment Modal -->
+          <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <form id="addPaymentForm" class="modal-content">
+                {% csrf_token %}
+                <div class="modal-header">
+                  <h5 class="modal-title">Add Payment</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body row g-3">
+                  <div class="col-6">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" name="kind">
+                      <option value="CHARGE" selected>Charge</option>
+                      <option value="REFUND">Refund</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">Method</label>
+                    <select class="form-select" name="method">
+                      <option value="CASH" selected>Cash</option>
+                      <option value="CARD">Card</option>
+                      <option value="BKASH">bKash</option>
+                      <option value="NAGAD">Nagad</option>
+                      <option value="BANK">Bank Transfer</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Amount (BDT)</label>
+                    <!-- Integer BDT only -->
+                    <input type="number" class="form-control" name="amount" min="1" step="1" placeholder="e.g., 100" required>
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label">Reference</label>
+                    <input type="text" class="form-control" name="txn_ref" placeholder="Slip / Txn ID (optional)">
+                  </div>
+
+                  <div class="col-6">
+                    <label class="form-label">Time</label>
+                    <input type="datetime-local" class="form-control" name="received_at">
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Note</label>
+                    <input type="text" class="form-control" name="note" maxlength="255">
+                  </div>
+
+                  <div class="col-12">
+                    <div id="addPaymentErrors" class="text-danger small"></div>
+                  </div>
+                </div>
+
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="ti ti-device-floppy"></i> Save
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+
+
+
+          <!-- JS -->
+
+
+          {% comment %} <hr class="mt-4">
+          <div class="text-end">
+            <strong>Due:</strong>
+            <span class="fs-5 text-danger fw-semibold">
+              ৳ {{ booking.due_amount }}
+            </span>
+          </div> {% endcomment %}
+
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- ============ Transactions (Payments) ============ -->
+<div class="card shadow-sm mt-4">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <div class="fw-semibold">
+      <i class="ti ti-cash icon-sm me-1"></i> Transactions
+    </div>
+    <div class="small">
+      <span class="me-3">Net: <strong>{{ net_total }} ৳</strong></span>
+      <span class="me-3">Paid: <strong class="text-success">{{ paid_total }} ৳</strong></span>
+      <span>Due: <strong class="text-danger">{{ due_total }} ৳</strong></span>
+    </div>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:70px;">#</th>
+            {% comment %} <th>Kind</th> {% endcomment %}
+            <th>Method</th>
+            <th class="text-end">Amount</th>
+            <th>When</th>
+            <th>Ref</th>
+            <th>Note</th>
+            <th class="text-center" style="width:140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td>{{ p.id }}</td>
+            {% comment %} <td>
+              {% if p.kind == "CHARGE" %}
+                <span class="badge bg-success">Charge</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Refund</span>
+              {% endif %}
+            </td> {% endcomment %}
+            <td>{{ p.get_method_display }}</td>
+            <td class="text-end"><strong>{{ p.amount }} ৳</strong></td>
+            <td>{{ p.received_at|date:"d M Y, h:i A" }}</td>
+            <td>{{ p.txn_ref|default:"—" }}</td>
+            <td>{{ p.note|default:"—" }}</td>
+            <td class="text-center">
+              <!-- Invoice -->
+              <a href="{% url 'payment_invoice' p.id %}" target="_blank"
+                 class="action-icon text-info me-2" title="Invoice">
+                <i class="ti ti-file-text"></i>
+              </a>
+              <!-- Edit -->
+              <a href="{% url 'payment_edit' p.id %}" class="action-icon text-warning me-2" title="Edit">
+                <i class="ti ti-edit"></i>
+              </a>
+              <!-- Delete -->
+              <form action="{% url 'payment_delete' p.id %}" method="post"
+                    class="d-inline js-del-form">
+                {% csrf_token %}
+                <button type="submit" class="action-icon text-danger border-0 bg-transparent p-0" title="Delete">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-3">No transactions yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+  </div>
+</div>
+
+
+
+
+<!-- tiny CSS & JS for actions (optional, reuse from Payments list) -->
+<style>
+.action-icon i.ti{ transition:.18s; opacity:.9; font-size:1.1rem; }
+.action-icon:hover i.ti{ opacity:1; transform: translateY(-1px); }
+</style>
+<script>
+document.querySelectorAll('.js-del-form').forEach(f=>{
+  f.addEventListener('submit', (e)=>{
+    if(!confirm('Delete this payment? This cannot be undone.')) e.preventDefault();
+  });
+});
+</script>
+
+
+<script>
+(function() {
+  const form = document.getElementById('addPaymentForm');
+  const errBox = document.getElementById('addPaymentErrors');
+  const totalPaidText = document.getElementById('totalPaidText');
+  const balanceDueText = document.getElementById('balanceDueText');
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    errBox.textContent = '';
+
+    const fd = new FormData(form);
+    const url = "{% url 'booking_add_payment' booking.id %}";
+
+    const submitBtn = form.querySelector('button[type=submit]');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',                          // ✅ send cookies
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },  // ✅ cookie token
+        body: fd
+      });
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('Non-JSON response', res.status, text.slice(0, 500));
+        errBox.textContent = (res.status === 302 || text.toLowerCase().includes('login'))
+          ? 'Auth/CSRF issue. Are you logged in? Try refreshing the page.'
+          : 'Server returned unexpected response.';
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        const errors = data.errors || {};
+        errBox.innerHTML = Object.entries(errors)
+          .map(([k,v]) => `<div>• ${k}: ${Array.isArray(v)? v.join(', ') : v}</div>`)
+          .join('');
+        return;
+      }
+
+      totalPaidText.textContent = data.total_paid_str;
+      balanceDueText.textContent = data.balance_due_str;
+
+      form.reset();
+      const modalEl = document.getElementById('addPaymentModal');
+      (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)).hide();
+
+    } catch (err) {
+      console.error(err);
+      errBox.textContent = 'Network error. Please try again.';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+})();
+</script>
+
+<style>
+.icon-sm{font-size:1rem;line-height:1;}
+.card-header{font-size:.95rem;}
+</style>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="card-title m-0">
+        {{ guest.full_name }}
+        <span class="badge bg-secondary ms-2">Companions: {{ companion_count }}</span>
+      </h4>
+      <div class="d-flex gap-2">
+        <a href="{% url 'edit' guest.pk %}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{% url 'list' %}" class="btn btn-sm btn-outline-secondary">Back to List</a>
+      </div>
+    </div>
+
+    <div class="card-body row">
+      <div class="col-md-3 text-center">
+        {% if guest.photo %}
+          <img src="{{ guest.photo.url }}" alt="{{ guest.full_name }}" class="img-fluid rounded mb-3 shadow-sm">
+        {% else %}
+          <img src="{% static 'img/avatars/1.png' %}" alt="No photo" class="img-fluid rounded mb-3 shadow-sm">
+          {% comment %} <img src="{% static 'img/avatars/1.png' %}" alt class="h-auto rounded-circle"> {% endcomment %}
+        {% endif %}
+      </div>
+
+      <div class="col-md-9">
+        <table class="table table-bordered">
+          <tbody>
+            <tr><th width="25%">Full Name</th><td>{{ guest.full_name }}</td></tr>
+            <tr><th>Phone</th><td>{{ guest.phone_number }}</td></tr>
+            <tr><th>Email</th><td>{{ guest.email|default:"—" }}</td></tr>
+            <tr><th>Father Name</th><td>{{ guest.father_name|default:"—" }}</td></tr>
+            <tr><th>NID / Passport</th><td>{{ guest.nid_passport|default:"—" }}</td></tr>
+            <tr><th>Age</th><td>{{ guest.age|default:"—" }}</td></tr>
+            <tr><th>Profession</th><td>{{ guest.profession|default:"—" }}</td></tr>
+            <tr><th>Company</th><td>{{ guest.company|default:"—" }}</td></tr>
+            <tr><th>Nationality</th><td>{{ guest.nationality|default:"—" }}</td></tr>
+            <tr><th>Address</th><td>{{ guest.address|default:"—" }}</td></tr>
+            {% comment %} <tr><th>Created By</th><td>{{ guest.created_by|default:"—" }}</td></tr> {% endcomment %}
+            <tr><th>Created At</th><td>{{ guest.created_at|date:"d M Y, h:i A" }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Companions -->
+  <div class="card mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="card-title m-0">Additional Guests</h5>
+      <a href="{% url 'edit' guest.pk %}" class="btn btn-sm btn-primary">Manage Companions</a>
+    </div>
+
+    <div class="card-body">
+      {% if guest.companions.all %}
+        {% if guest.companions.count %}
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>NID/Passport</th>
+                  <th>Email</th>
+                  <th>Father Name</th>
+                  <th>Phone</th>
+                  <th>Relation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in guest.companions.all %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ c.name }}</td>
+                    <td>{{ c.age|default:"—" }}</td>
+                    <td>{{ c.nid_passport|default:"—" }}</td>
+                    <td>{{ c.email|default:"—" }}</td>
+                    <td>{{ c.father_name|default:"—" }}</td>
+                    <td>{{ c.phone_number|default:"—" }}</td>
+                    <td>{{ c.relation|default:"—" }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="8" class="text-center text-muted py-3">No additional guests</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-muted">No additional guests.</div>
+        {% endif %}
+      {% else %}
+        <div class="text-muted">No additional guests.</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
