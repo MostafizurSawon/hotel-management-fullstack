@@ -23,13 +23,14 @@ from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
-    path('', views.home, name='home'),
+    # path('', views.home, name='home'),
+    path('', views.HomeView.as_view(), name='home'),
     path("jbdit-94/", admin.site.urls),
     # starter urls
     path("", include("apps.sample.urls")),
     # path("", include("apps.core.urls")),
     path("dashboard/", include("apps.pages.urls")),
-    path("dashboard/", include("apps.accounts.urls")),
+    path("", include("apps.accounts.urls")),
     path("guest/", include("apps.guests.urls")),
     path("finances/", include("apps.finances.urls")),
     path("", include("apps.core.urls", namespace="core")),

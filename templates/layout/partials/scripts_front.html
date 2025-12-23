@@ -6,4 +6,30 @@
 <script src="{% static 'vendor/libs/popper/popper.js' %}"></script>
 <script src="{% static 'vendor/js/bootstrap.js' %}"></script>
 <script src="{% static 'vendor/libs/node-waves/node-waves.js' %}"></script>
-<script src="{% static 'js/front-main.js' %}"></script>
+{% comment %} <script src="{% static 'js/front-main.js' %}"></script> {% endcomment %}
+
+
+
+{# ========= Core JS hotel ========= #}
+<script src="{% static 'js/jquery.js' %}"></script>
+
+{# ========= jQuery Plugins ========= #}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/waypoints/2.0.3/waypoints.min.js"></script>
+<script src="{% static 'vendors/jquery-ui/jquery-ui.min.js' %}"></script>
+
+{# ========= Bootstrap ========= #}
+<script src="{% static 'vendors/bootstrap/js/bootstrap.min.js' %}"></script>
+
+{# ========= Frontend Plugins ========= #}
+<script src="{% static 'vendors/countdown-date-loop-counter/loopcounter.js' %}"></script>
+<script src="{% static 'js/jquery.counterup.js' %}"></script>
+
+<script src="{% static 'vendors/modal-video/jquery-modal-video.min.js' %}"></script>
+<script src="{% static 'vendors/masonry/masonry.pkgd.min.js' %}"></script>
+<script src="{% static 'vendors/lightbox/dist/js/lightbox.min.js' %}"></script>
+<script src="{% static 'vendors/slick/slick.min.js' %}"></script>
+
+<script src="{% static 'js/jquery.slicknav.js' %}"></script>
+
+{# ========= Custom JS (Always last) ========= #}
+<script src="{% static 'js/custom.min.js' %}"></script>

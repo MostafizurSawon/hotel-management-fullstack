@@ -313,13 +313,57 @@ class BookingListPage(RequireAnyRoleMixin, ListView):
         except Exception:
             return None
 
+    # def get_queryset(self):
+    #     r = self.request
+    #     q_text = (r.GET.get("q") or "").strip()
+    #     room_id = (r.GET.get("room") or "").strip()
+    #     status  = (r.GET.get("status") or "").strip()
+
+    #     # ---- SAFE date parsing (no fromisoformat crashes) ----
+    #     ci_start = self._safe_parse_date(r.GET.get("ci_start"))
+    #     ci_end   = self._safe_parse_date(r.GET.get("ci_end"))
+    #     co_start = self._safe_parse_date(r.GET.get("co_start"))
+    #     co_end   = self._safe_parse_date(r.GET.get("co_end"))
+
+    #     qs = (
+    #         Booking.objects
+    #         .select_related("guest", "room", "room__category")
+    #         .order_by("-created_at")
+    #     )
+
+    #     if q_text:
+    #         qs = qs.filter(
+    #             Q(guest__full_name__icontains=q_text) |
+    #             Q(room__room_number__icontains=q_text) |
+    #             Q(room__category__name__icontains=q_text)
+    #         )
+
+    #     if room_id:
+    #         qs = qs.filter(room_id=room_id)
+
+    #     if status:
+    #         qs = qs.filter(status=status)
+
+    #     # Date range filters — works for DateField/DateTimeField
+    #     if ci_start:
+    #         qs = qs.filter(check_in__gte=ci_start)
+    #     if ci_end:
+    #         qs = qs.filter(check_in__lte=ci_end)
+
+    #     if co_start:
+    #         qs = qs.filter(check_out__gte=co_start)
+    #     if co_end:
+    #         qs = qs.filter(check_out__lte=co_end)
+
+    #     return qs
+
     def get_queryset(self):
         r = self.request
         q_text = (r.GET.get("q") or "").strip()
         room_id = (r.GET.get("room") or "").strip()
         status  = (r.GET.get("status") or "").strip()
 
-        # ---- SAFE date parsing (no fromisoformat crashes) ----
+        # ---- SAFE date parsing ----
         ci_start = self._safe_parse_date(r.GET.get("ci_start"))
         ci_end   = self._safe_parse_date(r.GET.get("ci_end"))
         co_start = self._safe_parse_date(r.GET.get("co_start"))
@@ -332,8 +376,10 @@ class BookingListPage(RequireAnyRoleMixin, ListView):
         )
 
         if q_text:
+            # এখানে guest__phone_number__icontains যোগ করা হয়েছে
             qs = qs.filter(
                 Q(guest__full_name__icontains=q_text) |
+                Q(guest__phone_number__icontains=q_text) |  # <--- নতুন লাইন
                 Q(room__room_number__icontains=q_text) |
                 Q(room__category__name__icontains=q_text)
             )
@@ -344,7 +390,7 @@ class BookingListPage(RequireAnyRoleMixin, ListView):
         if status:
             qs = qs.filter(status=status)
 
-        # Date range filters — works for DateField/DateTimeField
+        # Date range filters
         if ci_start:
             qs = qs.filter(check_in__gte=ci_start)
         if ci_end:

@@ -24,15 +24,15 @@
 	* Home slider section
 	* Home travel search section
 	* Home destination section
-	* Home package section 
+	* Home package section
 	* Home Travel choice section
-	* Home about section    
-	* Home activity section  
+	* Home about section
+	* Home activity section
 	* Home blog section
-	* Home testimonial section  
-	* Home clinet section  
-	* Home callback section 
-	* Home service section 
+	* Home testimonial section
+	* Home clinet section
+	* Home callback section
+	* Home service section
 	* Home Team section
 10. main Footer
 11. pages
@@ -1126,7 +1126,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> Main Header 
+>>> Main Header
 ----------------------------------------------------------------*/
 .site-header {
   position: relative;
@@ -2170,10 +2170,10 @@ input[type=submit]:focus {
   }
 }
 /*--------------------------------------------------------------
->>> Home Main section  
+>>> Home Main section
 ----------------------------------------------------------------*/
 /*--------------------------------------------------------------
->>> home section  
+>>> home section
 ----------------------------------------------------------------*/
 .slick-slider {
   position: relative;
@@ -2477,7 +2477,7 @@ input[type=submit]:focus {
   }
 }
 /*--------------------------------------------------------------
->>> About section  
+>>> About section
 ----------------------------------------------------------------*/
 .hotel-search-wrap {
   box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.08);
@@ -2574,7 +2574,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> package section  
+>>> package section
 ----------------------------------------------------------------*/
 .offer {
   left: 10px;
@@ -2678,7 +2678,7 @@ input[type=submit]:focus {
   text-align: center;
 }
 .badge-dis span:before {
-  background: #FF6D34;
+  /* background: #FF6D34; */
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   -ms-border-radius: 4px;
@@ -2697,7 +2697,7 @@ input[type=submit]:focus {
   z-index: -1;
 }
 .badge-dis span:after {
-  background: #ffffff;
+  /* background: #ffffff; */
   content: "";
   width: 6px;
   height: 6px;
@@ -2969,7 +2969,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> package section  
+>>> package section
 ----------------------------------------------------------------*/
 .callback-section {
   background-size: cover;
@@ -3028,7 +3028,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> package section  
+>>> package section
 ----------------------------------------------------------------*/
 .best-hotel-section {
   background-color: #f9f9f9;
@@ -3140,7 +3140,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> service section  
+>>> service section
 ----------------------------------------------------------------*/
 .service-section {
   background-color: #f9f9f9;
@@ -3169,7 +3169,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> About section  
+>>> About section
 ----------------------------------------------------------------*/
 .about-section {
   padding-bottom: 100px;
@@ -3304,7 +3304,7 @@ input[type=submit]:focus {
   }
 }
 /*--------------------------------------------------------------
->>> testimonial section  
+>>> testimonial section
 ----------------------------------------------------------------*/
 .testimonial-section {
   padding: 100px 0;
@@ -3498,7 +3498,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> Blog section  
+>>> Blog section
 ----------------------------------------------------------------*/
 .blog-section {
   padding-bottom: 70px;
@@ -3604,7 +3604,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> Main Footer  
+>>> Main Footer
 ----------------------------------------------------------------*/
 /* ---subscribe section css start--- */
 .subscribe-section {
@@ -3813,7 +3813,7 @@ input[type=submit]:focus {
 }
 
 /*--------------------------------------------------------------
->>> Inner Banner  
+>>> Inner Banner
 ----------------------------------------------------------------*/
 .inner-banner-wrap {
   background-size: cover;
@@ -6306,7 +6306,7 @@ product checkout css
 }
 
 /*--------------------------------------------------------------
->>> Compatibility 
+>>> Compatibility
 ----------------------------------------------------------------*/
 .overlay-hover .thumb-img img {
   -webkit-transform: scale(1.1);
