@@ -47,8 +47,9 @@ class GuestSearchAPI(RequireAnyRoleMixin, View):
         data = [
             {
                 "id": g.id,
-                "label": f"{g.full_name} — {g.phone_number or ''}".strip(" —"),
+                "label": f"{g.full_name} — {g.company or 'N/A'} — {g.phone_number or ''}".strip(" —"),
                 "name": g.full_name,
+                "company": g.company,
                 "phone": g.phone_number,
                 "email": g.email,
             }

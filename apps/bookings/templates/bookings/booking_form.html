@@ -14,6 +14,10 @@
     {% endfor %}
   {% endif %}
 
+  <div class="my-3 p-3 text-white bg-info text-center rounded">
+    {{site_settings.name|default:""}}
+  </div>
+
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">{{ page_title }}</h4>
     <div>
@@ -386,7 +390,7 @@
         if(!items.length){ hideSuggest(); return; }
         guestSuggest.innerHTML = items.map(it=>`
           <button type="button" class="list-group-item list-group-item-action"
-                  data-id="${it.id}" data-name="${it.name}">
+                  data-id="${it.id}" data-name="${it.name}" data-company="${it.company||''}">
             ${it.label}
           </button>`).join("");
         guestSuggest.style.display = "block";
