@@ -6,6 +6,7 @@
       "name": "Dashboard",
       "slug": "index"
     },
+    { "menu_header": "—— Guest Section ——" },
     {
       "url": "create",
       "icon": "menu-icon tf-icons ti ti-user-plus",
@@ -18,6 +19,7 @@
       "name": "Guest List",
       "slug": "list"
     },
+    { "menu_header": "—— Booking Section ——" },
     {
       "url": "booking_create",
       "icon": "menu-icon tf-icons ti ti-calendar-plus",
@@ -30,12 +32,7 @@
       "name": "Booking List",
       "slug": "booking_list"
     },
-    {
-      "url": "payment_list",
-      "icon": "menu-icon tf-icons ti ti-cash",
-      "name": "Payment List",
-      "slug": "payment_list"
-    },
+    { "menu_header": "—— Room Section ——" },
     {
       "url": "room_overview",
       "icon": "menu-icon tf-icons ti ti-bed",
@@ -48,6 +45,7 @@
       "name": "Add Room",
       "slug": "room_list"
     },
+    { "menu_header": "—— Reports and Log ——" },
     {
       "url": "report_summary",
       "icon": "menu-icon tf-icons ti ti-chart-bar",
@@ -59,6 +57,36 @@
       "icon": "menu-icon tf-icons ti ti-message-dots",
       "name": "SMS Log",
       "slug": "sms_log_list"
+    },
+    { "menu_header": "—— Financial Section ——" },
+    {
+      "url": "payment_list",
+      "icon": "menu-icon tf-icons ti ti-cash",
+      "name": "Payment List",
+      "slug": "payment_list"
+    },
+    {
+      "name": "Expense",
+      "icon": "menu-icon tf-icons ti ti-wallet",
+      "slug": "income-expense",
+      "submenu": [
+        {
+          "url": "expense_list",
+          "name": "Expense List",
+          "slug": "expense_list"
+        },
+        {
+          "url": "expense_category_list",
+          "name": "Expense Category",
+          "slug": "expense_category_list"
+        }
+      ]
+    },
+    {
+      "url": "ledger_view",
+      "icon": "menu-icon tf-icons ti ti-report",
+      "name": "Income Expense Ledger",
+      "slug": "ledger_view"
     },
     { "menu_header": "—— General Settings ——" },
     {

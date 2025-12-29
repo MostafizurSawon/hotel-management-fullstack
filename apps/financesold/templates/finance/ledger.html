@@ -1,8 +1,8 @@
 {% extends layout_path %}
 {% load static %}
-{% block title %} ledger{% endblock %}
 {% load humanize %}
 
+{% block title %}Ledger{% endblock %}
 
 {% block content %}
 <style>
@@ -94,16 +94,16 @@
           <th class="col-category">Category</th>
           <th class="col-name">Name</th>
           <th class="col-amount">Amount</th>
-
+        
           <th class="col-sl">SL</th>
           <th class="col-date">Date</th>
           <th class="col-category">Category</th>
           <th class="col-name">Name</th>
           <th class="col-amount">Amount</th>
-
+        
           {% comment %} <th class="col-balance">Balance</th> {% endcomment %}
         </tr>
-
+        
       </thead>
       <tbody>
         {% for income, expense in combined_data %}
@@ -127,7 +127,7 @@
           <td class="col-balance" rowspan="{{ combined_data|length }}">
             <strong>{{ balance|intcomma }} ৳</strong>
           </td>
-
+          
           {% endif %}
         </tr>
         {% endfor %}
@@ -136,17 +136,17 @@
         <tr>
           <td colspan="4" class="text-end fw-bold text-success">Total Income:</td>
           <td class="fw-bold text-success">{{ total_income|intcomma }} ৳</td>
-
+      
           <td></td> <!-- spacer between income & expense -->
-
+      
           <td colspan="3" class="text-end fw-bold text-danger">Total Expense:</td>
           <td class="fw-bold text-danger">{{ total_expense|intcomma }} ৳</td>
-
+      
           {% comment %} <td class="col-balance"></td> <!-- balance column --> {% endcomment %}
         </tr>
       </tfoot>
-
-
+      
+      
     </table>
 
   </div>

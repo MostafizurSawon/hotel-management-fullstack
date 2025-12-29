@@ -1,0 +1,188 @@
+{% extends layout_path %}
+{% load humanize %}
+{% block title %}Payments Report{% endblock %}
+
+{% block content %}
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <h4 class="mb-0">Payments Report</h4>
+    <span class="badge bg-success fs-6">Total: ৳ {{ total_paid|floatformat:0|intcomma }}</span>
+  </div>
+
+  <div class="card mb-3">
+    <form method="get" class="card-body row g-3 align-items-end">
+      {% comment %} <div class="col-md-2">
+        <label class="form-label">Single Date</label>
+        <input type="date" name="date" class="form-control" value="{{ filters.date }}">
+      </div> {% endcomment %}
+
+      <div class="col-md-2">
+        <label class="form-label">From</label>
+        <input type="date" name="date_from" class="form-control" value="{{ filters.date_from }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">To</label>
+        <input type="date" name="date_to" class="form-control" value="{{ filters.date_to }}">
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Method</label>
+        <select name="method" class="form-select">
+          {% for val,label in methods %}
+            <option value="{{ val }}" {% if filters.method == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Purpose</label>
+        <select name="purpose" class="form-select">
+          <option value="">All</option>
+          {% for p in purposes %}
+            <option value="{{ p.id }}" {% if filters.purpose == p.id|stringformat:"s" %}selected{% endif %}>
+              {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Program</label>
+        <select name="program" class="form-select">
+          <option value="">All</option>
+          {% for pr in programs %}
+            <option value="{{ pr.id }}" {% if filters.program == pr.id|stringformat:"s" %}selected{% endif %}>
+              {{ pr.pro_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% comment %} <div class="col-md-2">
+        <label class="form-label">Session</label>
+        <select name="session" class="form-select">
+          <option value="">All</option>
+          {% for s in sessions %}
+            <option value="{{ s.id }}" {% if filters.session == s.id|stringformat:"s" %}selected{% endif %}>
+              {{ s.ses_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div> {% endcomment %}
+
+      {% comment %} <div class="col-md-3">
+        <label class="form-label">Search (Ref/Note)</label>
+        <input type="text" name="search" class="form-control" value="{{ filters.search }}" placeholder="Txn ref or note">
+      </div> {% endcomment %}
+
+      <div class="col-md-2 d-flex gap-2">
+        <button class="btn btn-primary flex-fill">Search</button>
+        <a class="btn btn-secondary" href="{% url 'payments-report' %}">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Per-day summary -->
+  <div class="card mb-3">
+    <div class="card-header"><strong>Per-day Summary</strong></div>
+    <div class="card-body p-0">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:140px;">Date</th>
+            <th class="text-end" style="width:180px;">Total (৳)</th>
+            <th class="text-end" style="width:140px;">Count</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in per_day %}
+          <tr>
+            <td>{{ row.date|date:"d M Y" }}</td>
+            <td class="text-end fw-semibold">{{ row.total|floatformat:0|intcomma }}</td>
+            <td class="text-end">{{ row.count|intcomma }}</td>
+            <td></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted text-center">No data</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Detailed list -->
+  <div class="card">
+    <div class="card-header"><strong>Payments (Detailed)</strong></div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:110px;">Date</th>
+              <th class="text-end" style="width:160px;">Amount</th>
+              <th style="width:120px;">Method</th>
+              <th style="width:120px;">Invoice #</th>
+              <th style="width:180px;">Purpose</th>
+              <th>Student</th>
+              <th>Ref / Note</th>
+              <th style="width:150px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in payments %}
+            <tr>
+              <td>{{ p.date|date:"d M Y" }}</td>
+              <td class="text-end">{{ p.amount|floatformat:0|intcomma }}</td>
+              <td>{{ p.get_method_display }}</td>
+              <td>
+                {% if p.invoice %}
+                  <a href="{% url 'student-invoice-detail' pk=p.invoice.pk %}" target="_blank">
+                    {{ p.invoice.invoice.id }}
+                  </a>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if p.invoice and p.invoice.invoice.invoice_purpose %}
+                  {{ p.invoice.invoice.invoice_purpose.name }}
+                {% else %}—{% endif %}
+              </td>
+              <td>{{ p.student }}</td>
+              <td>
+                {% if p.txn_ref %}<span class="text-muted">#{{ p.txn_ref }}</span>{% endif %}
+                {% if p.note %}<div>{{ p.note }}</div>{% endif %}
+              </td>
+              <td class="text-nowrap">
+                {% if perms.finances.change_payment %}
+                  <a class="btn btn-sm btn-outline-primary me-1" href="{% url 'payment-edit' pk=p.id %}">Edit</a>
+                {% endif %}
+                {% if perms.finances.delete_payment %}
+                  <form method="post" action="{% url 'payment-delete' pk=p.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                      onclick="return confirm('Delete payment #{{ p.id }} (৳ {{ p.amount|floatformat:0|intcomma }}) ?');">Delete</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center text-muted">No payments found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

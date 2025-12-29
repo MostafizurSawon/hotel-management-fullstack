@@ -376,10 +376,9 @@ class BookingListPage(RequireAnyRoleMixin, ListView):
         )
 
         if q_text:
-            # এখানে guest__phone_number__icontains যোগ করা হয়েছে
             qs = qs.filter(
                 Q(guest__full_name__icontains=q_text) |
-                Q(guest__phone_number__icontains=q_text) |  # <--- নতুন লাইন
+                Q(guest__phone_number__icontains=q_text) |
                 Q(room__room_number__icontains=q_text) |
                 Q(room__category__name__icontains=q_text)
             )

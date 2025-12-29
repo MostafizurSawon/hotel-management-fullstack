@@ -73,11 +73,7 @@
 <body>
 
   <div class="header">
-    {% comment %} <img src="{% static 'cus/ledger_invoice.png' %}" class="logo" alt="Logo"> {% endcomment %}
-
-
-
-    <br>
+    <img src="{% static 'cus/ledger_invoice.png' %}" class="logo" alt="Logo"><br>
     <div class="title">
         Combined Ledger
         {% if start_date and end_date %}
@@ -88,7 +84,7 @@
           (Up to {{ end_date|date:"d/m/Y" }})
         {% endif %}
       </div>
-
+      
   </div>
 
   <table>

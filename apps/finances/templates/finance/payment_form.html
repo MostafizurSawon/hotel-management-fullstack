@@ -1,0 +1,318 @@
+{% extends layout_path %}
+{% load static %}
+{% block title %}Student Payment{% endblock %}
+{% load humanize %}
+
+{% block content %}
+<div class="">
+
+  {# ---- Flash messages ---- #}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <h4 class="mb-3">
+    {% if mode == "edit" %}Edit Payment #{{ payment.id }}{% else %}Record Payment{% endif %}
+  </h4>
+
+  <div class="card shadow-sm border-0 mb-3">
+  <div class="card-body">
+    <div class="d-flex align-items-start align-items-md-center justify-content-between flex-wrap gap-3">
+
+      <!-- Left: Student Photo + Meta -->
+      <div class="d-flex align-items-center gap-3 flex-grow-1">
+
+        <!-- 🖼️ Student Photo -->
+        <div class="flex-shrink-0">
+          {% if student.add_photo %}
+            <img src="{{ student.add_photo.url }}"
+                 alt="{{ student.add_name }}"
+                 class="rounded-circle border shadow-sm"
+                 style="width:70px; height:70px; object-fit:cover;">
+          {% else %}
+            <div class="d-flex align-items-center justify-content-center rounded-circle bg-light border"
+                 style="width:70px; height:70px;">
+              <i class="fa fa-user text-secondary fs-2"></i>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- 👤 Student Info -->
+        <div>
+          <div class="fw-semibold fs-5 mb-1">
+            {{ student.add_name|default:student }}
+          </div>
+
+          {% if student_invoice %}
+            <div class="d-flex flex-wrap align-items-center gap-2 small">
+              <span class="">Invoice:</span>
+
+              <!-- Purpose -->
+              <span class="badge rounded-pill bg-info ">
+                <i class="fa fa-tag me-1"></i>
+                {{ student_invoice.invoice.invoice_purpose.name|default:student_invoice.invoice.invoice_purpose }}
+              </span>
+
+              <!-- Amount -->
+              <span class="badge rounded-pill bg-light border text-dark">
+                <i class="fa fa-money-bill me-1 text-success"></i>
+                {{ student_invoice.invoice.amount|floatformat:2|intcomma }} Tk
+              </span>
+
+              {% if student_invoice.discount_amount %}
+                <span class="badge rounded-pill bg-warning text-dark">
+                  <i class="fa fa-percent me-1"></i>
+                  Waiver: {{ student_invoice.discount_amount|intcomma }}
+                </span>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          {% if last_payment_student %}
+            <div class="text-primary small mt-2">
+              <i class="fa fa-receipt me-1"></i>
+              Last payment: {{ last_payment_student.date|date:"d M Y" }},
+              {{ last_payment_student.amount|floatformat:2|intcomma }} ({{ last_payment_student.get_method_display }})
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Right: Current Due -->
+      <div class="text-end ms-auto">
+        <div class="text-muted small">Current Full Due </div>
+        <div class="fw-bold fs-3 mb-1">
+          {% if current_due > 0 %}
+            <span class="text-danger">৳ {{ current_due|floatformat:2|intcomma }}</span>
+          {% else %}
+            <span class="text-success">৳ {{ current_due|floatformat:2|intcomma }}</span>
+          {% endif %}
+        </div>
+        <div>
+          {% if current_due > 0 %}
+            <span class="badge bg-danger"><i class="fa fa-exclamation-circle me-1"></i> Due</span>
+          {% else %}
+            <span class="badge bg-success"><i class="fa fa-check-circle me-1"></i> Clear</span>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  {# ===================== One-time Discount & Payment Status ===================== #}
+  {% if student_invoice %}
+    <div class="card border-info mb-4">
+      <div class="card-header py-2 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Discount & Payment Status</h6>
+        <small class="text-muted">
+          Purpose: <strong>{{ student_invoice.invoice.invoice_purpose.name }}</strong>
+        </small>
+      </div>
+
+      <form method="post" action="{% url 'student-invoice-update' student_invoice.id %}" class="card-body row g-3">
+        {% csrf_token %}
+
+        <!-- Base Amount -->
+        <div class="col-md-2">
+          <label class="form-label">Base Amount</label>
+          <input type="text" class="form-control" value="{{ student_invoice.invoice.amount|floatformat:2 }}" readonly>
+        </div>
+
+        <!-- Discount Amount -->
+        <div class="col-md-2">
+          <label class="form-label">Discount Amount</label>
+          <input type="number" name="discount_amount" step="0.01" min="0"
+                 value="{{ student_invoice.discount_amount|default_if_none:0 }}"
+                 class="form-control" id="discountInput">
+        </div>
+
+        <!-- Discount Reason -->
+        <div class="col-md-6">
+          <label class="form-label">Discount Reason</label>
+          <input type="text" name="discount_reason"
+                 value="{{ student_invoice.discount_reason|default:'' }}"
+                 class="form-control" placeholder="e.g. Scholarship / Upobritti">
+        </div>
+
+        <!-- Payment Status -->
+        <div class="col-md-2">
+          <label class="form-label">Payment Status</label>
+          <select name="is_paid" class="form-select">
+            <option value="false" {% if not student_invoice.is_paid %}selected{% endif %}>Unpaid</option>
+            <option value="true" {% if student_invoice.is_paid %}selected{% endif %}>Paid</option>
+          </select>
+        </div>
+
+        <!-- Hidden fields for other values -->
+        <input type="hidden" name="note" value="{{ student_invoice.note|default:'' }}">
+        <input type="hidden" name="add_payment_method" value="{{ student_invoice.add_payment_method|default_if_none:'' }}">
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+        <!-- Submit & Preview -->
+        <div class="col-12 d-flex align-items-end gap-2">
+          <button type="submit" class="btn btn-outline-info">
+            Save Changes
+          </button>
+          <div class="ms-auto text-end">
+            <div class="small text-muted">Preview Payable (Base − Discount)</div>
+            <div class="fw-bold" id="payablePreview">
+              {{ student_invoice.invoice.amount|floatformat:2 }}
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+
+  {# ===================== Payment Form ===================== #}
+  <form method="post" class="card p-3 mb-4">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Amount</label>
+        {{ form.amount }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Method</label>
+        {{ form.method }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Date</label>
+        {{ form.date }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Txn Ref</label>
+        {{ form.txn_ref }}
+      </div>
+      <div class="col-12">
+        <label class="form-label">Note</label>
+        {{ form.note }}
+      </div>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% if mode == "edit" %}<i class="fa fa-save me-1"></i> Update{% else %}<i class="fa fa-save me-1"></i> Save Payment{% endif %}
+      </button>
+
+      {% comment %} {% if student_invoice %}
+      <a class="btn btn-secondary" href="{% url 'student-invoice-detail' pk=student_invoice.pk %}">Back</a>
+      {% else %} {% endcomment %}
+      <a class="btn btn-secondary" href="{% url 'student-invoice-list' %}">Back</a>
+      {% comment %} {% endif %} {% endcomment %}
+    </div>
+  </form>
+
+  {# ===================== Payment History (this student) ===================== #}
+  <div class="card shadow-sm">
+    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+      <h6 class="mb-0">Payment History (Student)</h6>
+      <span class="badge bg-primary">
+        Total Paid: {{ payments_student_total|floatformat:2|intcomma }} BDT
+      </span>
+    </div>
+    <div class="card-body p-2">
+      {% if payments_student %}
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width:105px;">Date</th>
+                <th class="text-end" style="width:120px;">Amount</th>
+                <th style="width:110px;">Method</th>
+                <th style="width:160px;">Purpose</th>  {# <-- NEW #}
+                <th style="width:110px;">Invoice #</th>
+                <th>Reference / Note</th>
+                <th style="width:200px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments_student %}
+              <tr>
+                <td>{{ p.date|date:"d M Y" }}</td>
+                <td class="text-end">{{ p.amount|floatformat:2|intcomma }}</td>
+                <td>{{ p.get_method_display }}</td>
+                <td>
+                  {% if p.invoice %}
+                    {{ p.invoice.invoice.invoice_purpose.name }}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if p.invoice %}
+                    <a href="{% url 'student-invoice-detail' pk=p.invoice.pk %}" target="_blank">
+                      {{ p.invoice.invoice.id }}
+                    </a>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if p.txn_ref %}<span class="text-muted">#{{ p.txn_ref }}</span>{% endif %}
+                  {% if p.note %}<span class="d-block">{{ p.note }}</span>{% endif %}
+                </td>
+                <td class="text-nowrap">
+                  {% if p.invoice %}
+                    <a class="btn btn-sm btn-outline-info me-1"
+                       href="{% url 'student-invoice-detail' pk=p.invoice.pk %}"
+                       target="_blank" title="View Invoice">
+                      Invoice
+                    </a>
+                  {% else %}
+                    <button class="btn btn-sm btn-outline-secondary me-1" disabled title="No Invoice Linked">
+                      Invoice (—)
+                    </button>
+                  {% endif %}
+
+                  {% if perms.finances.change_payment %}
+                    <a class="btn btn-sm btn-outline-primary me-1"
+                       href="{% url 'payment-edit' pk=p.id %}">
+                      Edit
+                    </a>
+                  {% endif %}
+
+                  {% if perms.finances.delete_payment %}
+                    <form method="post" action="{% url 'payment-delete' pk=p.id %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger"
+                              onclick="return confirm('Delete payment #{{ p.id }} for {{ p.amount|floatformat:2|intcomma }} BDT? This cannot be undone.');">
+                        Delete
+                      </button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-muted small">No payments recorded yet for this student.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# --- Small JS: payable preview for discount --- #}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    {% if student_invoice %}
+      const base = parseFloat('{{ student_invoice.invoice.amount|floatformat:2 }}') || 0;
+      const inp  = document.getElementById('discountInput');
+      const out  = document.getElementById('payablePreview');
+      if (inp && out) {
+        function fmt(n){ return (Math.max(0, n)).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}) + ' Tk'; }
+        function update(){ const d = parseFloat(inp.value || '0') || 0; out.textContent = fmt(base - d); }
+        inp.addEventListener('input', update);
+        update();
+      }
+    {% endif %}
+  });
+</script>
+{% endblock %}

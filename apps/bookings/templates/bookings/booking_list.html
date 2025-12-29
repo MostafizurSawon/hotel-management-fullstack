@@ -161,7 +161,7 @@
               </td>
 
               <td class="text-center">
-                <span class="money money--due">{{ b.due_amount|floatformat:0|intcomma }} ৳</span>
+                <span class="money money--due text-sm">{{ b.due_amount|floatformat:0|intcomma }} ৳</span>
               </td>
               <td class="text-center">
                 <span class="money money--total">{{ b.net_amount|floatformat:0|intcomma }} ৳</span>
@@ -318,13 +318,13 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: .2px;
 }
-.money--discount{ color: #0ea5e9; }   /* info */
-.money--paid    { color: #16a34a; }   /* success */
-.money--total   { color: #111827; font-weight: 600; } /* strong */
+.money--discount{ color: #0ea5e9; }
+.money--paid    { color: #16a34a; }
+.money--total   { color: #111827; font-weight: 600; }
 .money--due{
-  background: #fff7e6;
+  {% comment %} background: #fff7e6; {% endcomment %}
   color: #b45309;
-  border: 1px solid #f4d7a1;
+  {% comment %} border: 1px solid #f4d7a1; {% endcomment %}
   padding: .18rem .45rem;
   border-radius: .375rem;
   font-weight: 600;
