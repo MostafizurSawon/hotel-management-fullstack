@@ -41,6 +41,8 @@ urlpatterns = [
     path('ledger/', login_required(LedgerView.as_view()), name='ledger_view'),
     path('ledger/export-csv/', export_ledger_csv, name='ledger_export_csv'),
 
+    path("ledger/print/", views.LedgerPrintView.as_view(), name="ledger_print"), # new pdf system
+
     path('ledger/pdf/', views.ledger_export_pdf, name='ledger_export_pdf'),
 
     # only income

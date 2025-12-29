@@ -1,0 +1,275 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ledger Print</title>
+
+  <style>
+    /* ---------- GLOBAL & PAGE SETUP ---------- */
+    :root {
+      --border-color: #999;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 10mm;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      margin: 0;
+      padding: 20px;
+      background: #e6e6e6;
+    }
+
+    /* ---------- PRINT CONTAINER ---------- */
+    .page-container {
+      width: 210mm;
+      min-height: 297mm;
+      margin: auto;
+      background: #fff;
+      padding: 10mm;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* ---------- HEADER ---------- */
+    .header-table {
+      width: 100%;
+      border: none;
+      margin-bottom: 10px;
+    }
+    .header-table td { border: none; padding: 2px; }
+
+    .logo-img { height: 50px; object-fit: contain; }
+
+    .company-title { font-size: 18px; font-weight: bold; margin: 0; }
+    .company-info { font-size: 11px; color: #333; line-height: 1.3; }
+
+    .ledger-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+      margin: 15px 0;
+      text-decoration: underline;
+      text-transform: uppercase;
+    }
+
+    /* ---------- TABLE STYLES ---------- */
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    .ledger-table th, .ledger-table td {
+      border: 1px solid var(--border-color);
+      padding: 5px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .ledger-table th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+
+    /* --- BALANCE COLUMN STYLE --- */
+    /* বর্ডার ট্রিক আগের মতোই থাকছে */
+    .col-balance {
+      width: 12%;
+      font-weight: bold;
+      background-color: #fafafa;
+      border-top: 1px solid transparent !important;
+      border-bottom: 1px solid transparent !important;
+      border-left: 1px solid #666 !important;
+      border-right: 1px solid var(--border-color) !important;
+
+      /* ফন্ট সাইজ একটু বড় করা হলো যাতে চোখে পড়ে */
+      font-size: 13px;
+      color: #000;
+    }
+
+    /* প্রথম রো-এর উপরের বর্ডার */
+    .ledger-table tbody tr:first-child .col-balance {
+      border-top: 1px solid var(--border-color) !important;
+    }
+
+    /* শেষ রো-এর নিচের বর্ডার */
+    .ledger-table tbody tr:last-child .col-balance {
+      border-bottom: 1px solid var(--border-color) !important;
+    }
+
+    /* ---------- UTILS ---------- */
+    .text-success { color: #006400; font-weight: bold; }
+    .text-danger { color: #8b0000; font-weight: bold; }
+    .text-end { text-align: right; }
+    .bold { font-weight: bold; }
+
+    /* ---------- FOOTER ---------- */
+    .print-footer {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 10px;
+      color: #555;
+      background: #fff;
+      padding: 5px 0;
+      border-top: 1px solid #eee;
+    }
+
+    /* ---------- PRINT MEDIA QUERY ---------- */
+    @media print {
+      body { background: none; padding: 0; margin: 0; }
+      .no-print { display: none; }
+
+      .page-container {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      tr { page-break-inside: avoid; }
+      .print-footer { display: block; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="no-print" style="text-align:center; margin-bottom: 20px;">
+  <button onclick="window.print()" style="padding: 8px 15px; cursor: pointer; background: #333; color: #fff; border: none;">🖨 Print View</button>
+</div>
+
+<div class="page-container">
+
+  <table class="header-table">
+    <tr>
+      <td style="width: 15%;">
+        {% if site_settings.logo %}
+          <img src="{{ site_settings.logo.url }}" alt="Logo" class="logo-img">
+        {% endif %}
+      </td>
+      <td style="text-align: center;">
+        <div class="company-title">{{ site_settings.name }}</div>
+        {% comment %} <div class="company-info">
+          {% if site_settings.address %}{{ site_settings.address }}<br>{% endif %}
+          {% if site_settings.phone %}Cell: {{ site_settings.phone }}{% endif %}
+        </div> {% endcomment %}
+        <div class="company-info">
+          {% comment %} {% if site_settings.address %}{{ site_settings.address }}<br>{% endif %} {% endcomment %}
+          {% if site_settings.district %}{{ site_settings.upozilla }} - {{ site_settings.district }}{% endif %}
+          {% if site_settings.phone %} <br>Cell: {{ site_settings.phone }}{% endif %}
+        </div>
+      </td>
+      <td style="width: 15%;"></td>
+    </tr>
+  </table>
+
+  <div class="ledger-title">
+    Ledger Report
+    <span style="font-size: 12px; font-weight: normal; display: block; margin-top: 4px;">
+      {% if start_date and end_date %}({{ start_date }} - {{ end_date }}){% endif %}
+    </span>
+  </div>
+
+  <table class="ledger-table" id="ledgerTableData">
+    <thead>
+      <tr>
+        <th colspan="5" style="border-right: 1px solid #666;">INCOME (Booking)</th>
+        <th colspan="4" style="border-right: 1px solid #666;">EXPENSE</th>
+        <th rowspan="2" style="border-left: 1px solid #666;">Balance</th>
+      </tr>
+      <tr>
+        <th>SL</th>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Name</th>
+        <th style="border-right: 1px solid #666;">Amount</th>
+
+        <th>Date</th>
+        <th>Category</th>
+        <th>Name</th>
+        <th style="border-right: 1px solid #666;">Amount</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for income, expense in combined_data %}
+      <tr>
+        {% if income %}
+          <td>{{ forloop.counter }}</td>
+          <td>{{ income.received_at|date:"d/m/Y" }}</td>
+          <td>Booking</td>
+          <td style="text-align: left;">Booking Income</td>
+          <td class="text-success" style="border-right: 1px solid #666;">{{ income.amount|intcomma }}</td>
+        {% else %}
+          <td>{{ forloop.counter }}</td><td></td><td></td><td></td><td style="border-right: 1px solid #666;"></td>
+        {% endif %}
+
+        {% if expense %}
+          <td>{{ expense.date|date:"d/m/Y" }}</td>
+          <td>{{ expense.exp_category.name }}</td>
+          <td style="text-align: left;">{{ expense.exp_name }}</td>
+          <td class="text-danger" style="border-right: 1px solid #666;">{{ expense.amount|intcomma }}</td>
+        {% else %}
+          <td></td><td></td><td></td><td style="border-right: 1px solid #666;"></td>
+        {% endif %}
+
+        <td class="col-balance"></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr style="background-color: #f0f0f0;">
+        <td colspan="4" class="text-end bold">Total Income:</td>
+        <td class="text-success bold" style="border-right: 1px solid #666;">{{ total_income|intcomma }}</td>
+
+        <td colspan="3" class="text-end bold">Total Expense:</td>
+        <td class="text-danger bold" style="border-right: 1px solid #666;">{{ total_expense|intcomma }}</td>
+
+        <td class="bold" style="background: #e0e0e0; font-size: 11px; border-left: 1px solid #666;">
+           Final: {{ balance|intcomma }}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="print-footer">
+    Software Generated Report | {{ site_settings.name }}
+  </div>
+
+</div>
+
+<script>
+  window.onload = function() {
+    // ১. ব্যালেন্সের ভ্যালুটি আমরা জ্যাঙ্গো থেকে নিচ্ছি
+    const balanceValue = "{{ balance|intcomma }} Tk";
+
+    // ২. টেবিলের সব ডাটা রো খুঁজে বের করছি
+    const tableBody = document.querySelector('#ledgerTableData tbody');
+    const rows = tableBody.querySelectorAll('tr');
+
+    if (rows.length > 0) {
+      // ৩. মাঝখানের রো ইনডেক্স বের করছি (Math.floor দিয়ে)
+      const middleIndex = Math.floor((rows.length - 1) / 2);
+
+      // ৪. মাঝখানের রো-এর 'col-balance' সেলে ভ্যালুটি বসাচ্ছি
+      const targetCell = rows[middleIndex].querySelector('.col-balance');
+      if (targetCell) {
+        targetCell.innerText = balanceValue;
+      }
+    }
+  };
+</script>
+
+</body>
+</html>
