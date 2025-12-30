@@ -4,8 +4,23 @@ from .views_ajax import GuestSearchAPI, RoomInfoAPI, RoomAvailabilityAPI, Availa
 from . import views_payments
 from . import views_invoices
 from . import views_reports
+from . import views_guest
+from . import views
 
 urlpatterns = [
+    # Guest mode
+    path(
+        "guest/book/",
+        views_guest.GuestBookingCreateView.as_view(),
+        name="guest_booking_create",
+    ),
+
+    # path("guest/booking/success/", TemplateView.as_view(
+    #     template_name="bookings/guest_booking_success.html"
+    # ), name="guest_booking_success"),
+
+
+
     # Create page
     path("bookings/new/", BookingCreatePage.as_view(), name="booking_create"),
     path("bookings/", BookingListPage.as_view(), name="booking_list"),
@@ -37,6 +52,11 @@ urlpatterns = [
 
     # path("dashboard/payments/<int:pk>/invoice/", views_payments.payment_invoice, name="payment_invoice"),
     # path("dashboard/payments/<int:pk>/invoice/partial/", views_payments.payment_invoice_partial, name="payment_invoice_partial"),
+
+    # Frontend search
+
+    path("search-rooms/", views.RoomSearchView.as_view(), name="room_search"),
+
 
 
     # AJAX APIs

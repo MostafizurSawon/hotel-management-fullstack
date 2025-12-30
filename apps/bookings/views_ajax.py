@@ -14,7 +14,7 @@ from django.db.models import Q
 
 from apps.core.guards import RequireAnyRoleMixin
 from apps.core.roles import (
-    ROLE_RECEPTIONIST, ROLE_MANAGER, ROLE_ADMIN, ROLE_SUPER_ADMIN
+    ROLE_RECEPTIONIST, ROLE_MANAGER, ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_GUEST
 )
 
 from apps.guests.models import Guest
@@ -93,7 +93,7 @@ class RoomInfoAPI(RequireAnyRoleMixin, View):
 # -------------------------------------------------------------------
 @method_decorator(login_required, name="dispatch")
 class RoomAvailabilityAPI(RequireAnyRoleMixin, View):
-    allowed_roles = (ROLE_RECEPTIONIST, ROLE_MANAGER, ROLE_ADMIN, ROLE_SUPER_ADMIN)
+    allowed_roles = (ROLE_RECEPTIONIST, ROLE_MANAGER, ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_GUEST)
 
     def get(self, request):
         rid_raw    = request.GET.get("room")

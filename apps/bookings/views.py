@@ -109,7 +109,7 @@ from django.utils import timezone
 
 
 
-# views.py (or wherever your BookingCreatePage lives)
+
 
 import logging
 from django.contrib import messages
@@ -1126,3 +1126,144 @@ class BookingDetailPage(RequireAnyRoleMixin, DetailView):
             "net_total": b.net_amount,
         })
         return ctx
+
+
+
+
+
+
+
+# Frontend search room
+
+from django.views import View
+from django.shortcuts import render
+from web_project import TemplateLayout, TemplateHelper
+from apps.room.models import Room, Category
+from apps.bookings.models import Booking
+
+class RoomSearchView(View):
+    template_name = "home.html"
+
+    def get(self, request):
+        ctx = TemplateLayout.init(self, {})
+
+        check_in = request.GET.get("check_in")
+        check_out = request.GET.get("check_out")
+        category_id = request.GET.get("category")
+        pax = request.GET.get("pax")
+
+        categories = Category.objects.all().order_by("name")
+
+        rooms = Room.objects.none()
+        if check_in and check_out:
+            # base queryset
+            rooms = Room.objects.select_related("category")
+
+            # optional category filter
+            if category_id:
+                rooms = rooms.filter(category_id=category_id)
+
+            # ❗ exclude overlapping bookings
+            rooms = rooms.exclude(
+                bookings__check_in__lt=check_out,
+                bookings__check_out__gt=check_in
+            ).distinct()
+
+        # sort = request.GET.get("sort", "price")
+        # if sort == "price":
+        #     rooms = rooms.order_by("price")
+
+        sort = request.GET.get("sort", "price_asc")
+
+        if sort == "price_asc":
+            rooms = rooms.order_by("price")
+        elif sort == "price_desc":
+            rooms = rooms.order_by("-price")
+
+        ctx.update({
+            "layout_path": TemplateHelper.set_layout("layout_blank.html", ctx),
+            "is_front": True,
+
+            "searched": True,
+            "check_in": check_in,
+            "check_out": check_out,
+            "selected_category": category_id,
+            "pax": pax,
+            "sort": sort,
+            "room_categories": categories,
+            "rooms": rooms,
+        })
+
+        return render(request, self.template_name, ctx)
+
+
+
+# guest role booking
+# from django.views import View
+# from django.shortcuts import render, redirect
+# from django.contrib import messages
+# from django.utils.decorators import method_decorator
+# from django.contrib.auth.decorators import login_required
+
+# from web_project import TemplateLayout, TemplateHelper
+# from apps.bookings.models import Booking
+# from apps.room.models import Room
+# from apps.guests.models import Guest
+
+
+# @method_decorator(login_required, name="dispatch")
+# class GuestBookingCreateView(View):
+#     template_name = "bookings/guest_booking_form.html"
+
+#     def get(self, request):
+#         # 🔐 role guard
+#         if request.user.role != "guest":
+#             messages.error(request, "Only guests can request bookings.")
+#             return redirect("index")
+
+#         ctx = TemplateLayout.init(self, {})
+#         ctx.update({
+#             "layout_path": TemplateHelper.set_layout("layout_blank.html", ctx),
+#             "room_id": request.GET.get("room"),
+#             "check_in": request.GET.get("check_in"),
+#             "check_out": request.GET.get("check_out"),
+#         })
+#         return render(request, self.template_name, ctx)
+
+#     def post(self, request):
+#         if request.user.role != "guest":
+#             messages.error(request, "Unauthorized.")
+#             return redirect("index")
+
+#         room_id   = request.POST.get("room")
+#         check_in  = request.POST.get("check_in")
+#         check_out = request.POST.get("check_out")
+#         notes     = request.POST.get("notes", "")
+
+#         if not room_id or not check_in or not check_out:
+#             messages.error(request, "Please fill all required fields.")
+#             return redirect(request.path)
+
+#         try:
+#             room = Room.objects.get(pk=room_id)
+#             guest = Guest.objects.get(user_account=request.user)
+#         except (Room.DoesNotExist, Guest.DoesNotExist):
+#             messages.error(request, "Invalid booking request.")
+#             return redirect("index")
+
+#         # 🟡 Create booking as PENDING
+#         Booking.objects.create(
+#             guest=guest,
+#             room=room,
+#             check_in=check_in,
+#             check_out=check_out,
+#             status=Booking.Status.PENDING,
+#             notes=notes or "Guest booking request",
+#             created_by=request.user,
+#         )
+
+#         messages.success(
+#             request,
+#             "✅ Your booking request has been submitted. Our team will contact you shortly."
+#         )
+#         return redirect("index")

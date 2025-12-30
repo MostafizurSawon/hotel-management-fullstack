@@ -565,7 +565,26 @@ class LedgerView(View):
         expense_category = request.GET.get("expense_category", "")
 
         # ------------------ INCOME (Booking Payment) ------------------
-        incomes = Payment.objects.all().order_by("received_at")
+        # incomes = Payment.objects.all().order_by("received_at")
+        # incomes = (
+        #     Payment.objects
+        #     .select_related(
+        #         "booking",
+        #         "booking__guest",
+        #         "booking__room"
+        #     )
+        #     .order_by("received_at")
+        # )
+        incomes = (
+            Payment.objects
+            .filter(kind=Payment.Kind.CHARGE)
+            .select_related(
+                "booking",
+                "booking__guest",
+                "booking__room",
+            )
+            .order_by("received_at")
+        )
 
         if start_date:
             incomes = incomes.filter(received_at__date__gte=parse_date(start_date))
@@ -724,12 +743,71 @@ def export_ledger_csv(request):
 # pdf
 
 
+# from django.views import View
+# from django.shortcuts import render
+# from django.utils.dateparse import parse_date
+# from django.db.models import Q, Sum
+
+# from .models import Expense
+
+
+# class LedgerPrintView(View):
+#     template_name = "finance/ledger_print.html"
+
+#     def get(self, request):
+#         search = request.GET.get("search", "").strip()
+#         start_date = request.GET.get("start_date")
+#         end_date = request.GET.get("end_date")
+#         expense_category = request.GET.get("expense_category")
+
+#         # INCOME (Booking)
+#         incomes = Payment.objects.all().order_by("received_at")
+#         if start_date:
+#             incomes = incomes.filter(received_at__date__gte=parse_date(start_date))
+#         if end_date:
+#             incomes = incomes.filter(received_at__date__lte=parse_date(end_date))
+#         if search:
+#             incomes = incomes.filter(
+#                 Q(reference__icontains=search) |
+#                 Q(booking__guest__name__icontains=search)
+#             )
+
+#         # EXPENSE
+#         expenses = Expense.objects.select_related("exp_category").all().order_by("date")
+#         if expense_category:
+#             expenses = expenses.filter(exp_category_id=expense_category)
+#         if start_date:
+#             expenses = expenses.filter(date__gte=parse_date(start_date))
+#         if end_date:
+#             expenses = expenses.filter(date__lte=parse_date(end_date))
+#         if search:
+#             expenses = expenses.filter(exp_name__icontains=search)
+
+#         income_list = list(incomes)
+#         expense_list = list(expenses)
+
+#         max_len = max(len(income_list), len(expense_list))
+#         income_list += [None] * (max_len - len(income_list))
+#         expense_list += [None] * (max_len - len(expense_list))
+
+#         context = {
+#             "combined_data": zip(income_list, expense_list),
+#             "total_income": sum(i.amount for i in incomes),
+#             "total_expense": sum(e.amount for e in expenses),
+#             "balance": sum(i.amount for i in incomes) - sum(e.amount for e in expenses),
+#             "start_date": start_date,
+#             "end_date": end_date,
+#         }
+
+#         return render(request, self.template_name, context)
+
 from django.views import View
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
 from django.db.models import Q, Sum
 
 from .models import Expense
+from apps.bookings.models import Payment
 
 
 class LedgerPrintView(View):
@@ -741,29 +819,48 @@ class LedgerPrintView(View):
         end_date = request.GET.get("end_date")
         expense_category = request.GET.get("expense_category")
 
-        # INCOME (Booking)
-        incomes = Payment.objects.all().order_by("received_at")
+        # ------------------ INCOME (Booking Payments) ------------------
+        incomes = (
+            Payment.objects
+            .filter(kind=Payment.Kind.CHARGE)
+            .select_related(
+                "booking",
+                "booking__guest",
+                "booking__room",
+            )
+            .order_by("received_at")
+        )
+
         if start_date:
             incomes = incomes.filter(received_at__date__gte=parse_date(start_date))
         if end_date:
             incomes = incomes.filter(received_at__date__lte=parse_date(end_date))
+
         if search:
             incomes = incomes.filter(
-                Q(reference__icontains=search) |
-                Q(booking__guest__name__icontains=search)
+                Q(booking__guest__full_name__icontains=search) |
+                Q(booking__room__room_number__icontains=search) |
+                Q(txn_ref__icontains=search)
             )
 
-        # EXPENSE
-        expenses = Expense.objects.select_related("exp_category").all().order_by("date")
+        # ------------------ EXPENSE ------------------
+        expenses = Expense.objects.select_related("exp_category").order_by("date")
+
         if expense_category:
             expenses = expenses.filter(exp_category_id=expense_category)
+
         if start_date:
             expenses = expenses.filter(date__gte=parse_date(start_date))
         if end_date:
             expenses = expenses.filter(date__lte=parse_date(end_date))
-        if search:
-            expenses = expenses.filter(exp_name__icontains=search)
 
+        if search:
+            expenses = expenses.filter(
+                Q(exp_name__icontains=search) |
+                Q(note__icontains=search)
+            )
+
+        # ------------------ ALIGN ROWS ------------------
         income_list = list(incomes)
         expense_list = list(expenses)
 
@@ -771,18 +868,21 @@ class LedgerPrintView(View):
         income_list += [None] * (max_len - len(income_list))
         expense_list += [None] * (max_len - len(expense_list))
 
+        # ------------------ TOTALS ------------------
+        total_income = incomes.aggregate(s=Sum("amount"))["s"] or 0
+        total_expense = expenses.aggregate(s=Sum("amount"))["s"] or 0
+        balance = total_income - total_expense
+
         context = {
             "combined_data": zip(income_list, expense_list),
-            "total_income": sum(i.amount for i in incomes),
-            "total_expense": sum(e.amount for e in expenses),
-            "balance": sum(i.amount for i in incomes) - sum(e.amount for e in expenses),
+            "total_income": total_income,
+            "total_expense": total_expense,
+            "balance": balance,
             "start_date": start_date,
             "end_date": end_date,
         }
 
         return render(request, self.template_name, context)
-
-
 
 import os
 from django.conf import settings

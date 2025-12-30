@@ -37,8 +37,8 @@ def can_send_otp(user):
     return elapsed > OTP_RESEND_COOLDOWN_SECONDS
 
 def send_otp_sms(user, otp, password):
-    message = f"আপনার ওটিপি: {otp}, লগইন ফোন নম্বর: {user.phone_number}, পাসওয়ার্ড: {password} নবাবগঞ্জ সিটি কলেজ।"
-    print("Sending otp...", TOKEN)
+    message = f"আপনার ওটিপি: {otp}, লগইন ফোন নম্বর: {user.phone_number}, পাসওয়ার্ড: {password} - {{site_settings.name|default:''}}"
+    # print("Sending otp...", TOKEN)
     return send_sms_jbd(user.phone_number, message, TOKEN, sender_id=SENDER_ID)
 
 
@@ -84,6 +84,7 @@ class GuestRegisterView(TemplateView):
             if status == "SENT":
                 messages.success(request, "OTP resent successfully to your phone.")
                 request.session['guest_phone'] = phone
+                request.session['next_url'] = request.GET.get('next')
                 return redirect('guest_otp_verify')
             else:
                 messages.error(request, "Failed to send OTP SMS. Please try again later.")
@@ -95,7 +96,7 @@ class GuestRegisterView(TemplateView):
 
         temp_user = User(
             phone_number=phone,
-            role='student',
+            role='guest',
             is_active=False,
             otp_code=otp,
             otp_created_at=timezone.now(),
@@ -107,7 +108,7 @@ class GuestRegisterView(TemplateView):
         if status == "SENT":
             user = User.objects.create(
                 phone_number=phone,
-                role='student',
+                role='guest',
                 is_active=False,
                 otp_code=otp,
                 otp_created_at=timezone.now(),
@@ -146,47 +147,6 @@ def normalize_phone_number(phone_number):
 
     return phone_number
 
-# def guest_otp_verify(request):
-#     if request.method == 'POST':
-#         entered_otp = request.POST.get('otp')
-#         phone = request.session.get('guest_phone')
-
-#         if not phone:
-#             return redirect('guest_login')
-
-#         try:
-#             user = User.objects.get(phone_number=phone)
-#         except User.DoesNotExist:
-#             return render(request, 'accounts/guest_otp_verify.html', {'error': 'User not found. Please login again.'})
-
-#         if user.is_active:
-#             messages.info(request, "Your account is already activated. Please login.")
-#             return redirect('guest_login')
-
-#         # Check OTP expiry
-#         if user.otp_created_at and timezone.now() > user.otp_created_at + timedelta(minutes=OTP_VALIDITY_MINUTES):
-#             user.otp_code = None
-#             user.otp_created_at = None
-#             user.save(update_fields=['otp_code', 'otp_created_at'])
-#             return render(request, 'accounts/guest_otp_verify.html', {'error': 'OTP expired. Please request again.'})
-
-#         if entered_otp == user.otp_code:
-#             user.is_active = True
-#             user.otp_code = None
-#             user.otp_created_at = None
-#             user.save(update_fields=['is_active', 'otp_code', 'otp_created_at'])
-
-#             # Create blank PassportInfo and CV if not exist
-#             PassportInfo.objects.get_or_create(user=user)
-#             TravelAgencyCV.objects.get_or_create(user=user)
-
-#             messages.success(request, "Your account is activated. You can now login.")
-#             request.session.pop('guest_phone', None)
-#             return redirect('guest_login')
-#         else:
-#             return render(request, 'accounts/guest_otp_verify.html', {'error': 'Invalid OTP'})
-
-#     return render(request, 'accounts/guest_otp_verify.html')
 
 class GuestOtpVerifyView(TemplateView):
     template_name = 'accounts/guest_otp_verify.html'
@@ -203,7 +163,7 @@ class GuestOtpVerifyView(TemplateView):
 
         if not phone:
             messages.error(request, "Session expired. Please start over.")
-            return redirect('guest_login')
+            return redirect('login')
 
         otp = request.POST.get('otp', '').strip()
 
@@ -211,7 +171,7 @@ class GuestOtpVerifyView(TemplateView):
             user = User.objects.get(phone_number=phone)
         except User.DoesNotExist:
             messages.error(request, "User not found. Please login again.")
-            return redirect('guest_login')
+            return redirect('login')
 
         # Optional: agei expiry check kore nao
         if user.otp_created_at and timezone.now() > user.otp_created_at + timedelta(minutes=5):
@@ -227,10 +187,13 @@ class GuestOtpVerifyView(TemplateView):
             login(request, user)
             request.session.pop('guest_phone', None)
             messages.success(request, "আপনার একাউন্টটি সফলভাবে একটিভেট হয়েছে l আপনার মোবাইলে প্রদত্ত এসএমএসটি ভালোভাবে সেভ করে রাখুন, পরবর্তীতে এটি কাজে লাগবে l")
-            return redirect('guest_login')  # or dashboard as you like
+            next_url = request.session.pop('next_url', None)
+            if next_url:
+                return redirect(next_url)
+
+            return redirect('index')
         else:
             messages.error(request, "Invalid OTP. Please try again.")
-            # ✅ Same context as GET, so layout_path thakbe
             context = self.get_context_data()
             return self.render_to_response(context, status=400)
 
@@ -296,7 +259,7 @@ class GuestForgotPasswordView(View):
             return redirect('guest_forgot_password')
 
         try:
-            user = User.objects.get(phone_number=normalized_phone, is_active=True, role='student')
+            user = User.objects.get(phone_number=normalized_phone, is_active=True, role='guest')
         except User.DoesNotExist:
             messages.error(request, "এই ফোন নম্বর দিয়ে কোন ব্যবহারকারী পাওয়া যায়নি।")
             return redirect('guest_forgot_password')
@@ -341,7 +304,7 @@ class GuestResetPasswordView(View):
         if not phone:
             return None
         try:
-            return User.objects.get(phone_number=phone, is_active=True, role='student')
+            return User.objects.get(phone_number=phone, is_active=True, role='guest')
         except User.DoesNotExist:
             return None
 
@@ -390,75 +353,11 @@ class GuestResetPasswordView(View):
 
 
 
-# class LogoutGetAllowedView(LogoutView):
-#     def get(self, request, *args, **kwargs):
-#         messages.success(request, "Logged Out Successfully.")
-#         return self.post(request, *args, **kwargs)
-
-# from django.contrib.auth.views import LogoutView
-# from django.contrib import messages
-
-# class CustomLogoutView(LogoutView):
-#     def get(self, request, *args, **kwargs):
-#         print("logged out!!")
-#         messages.success(request, "Logged out successfully.")
-#         return super().get(request, *args, **kwargs)
-
-
 class CustomLogoutView(LogoutView):
     def post(self, request, *args, **kwargs):
         print("logged out!!")
         messages.warning(request, "Logged out!")
         return super().post(request, *args, **kwargs)
-
-
-
-
-
-# def guest_otp_verify(request):
-#     if request.method == 'POST':
-#         entered_otp = request.POST.get('otp')
-#         phone = request.session.get('guest_phone')
-
-#         if not phone:
-#             return redirect('guest_login')
-
-#         try:
-#             user = User.objects.get(phone_number=phone)
-#         except User.DoesNotExist:
-#             context = {'error': 'User not found. Please login again.'}
-#             return render(request, 'accounts/guest_otp_verify.html', context)
-
-#         # Optional: Check if OTP expired (e.g., valid for 5 minutes)
-#         if user.otp_created_at and timezone.now() > user.otp_created_at + timedelta(minutes=5):
-#             user.otp_code = None
-#             user.otp_created_at = None
-#             user.save(update_fields=['otp_code', 'otp_created_at'])
-#             context = {'error': 'OTP expired. Please request again.'}
-#             return render(request, 'accounts/guest_otp_verify.html', context)
-
-#         if entered_otp == user.otp_code:
-#             # OTP matched: remove OTP fields
-#             user.otp_code = None
-#             user.otp_created_at = None
-#             user.save(update_fields=['otp_code', 'otp_created_at'])
-
-#             # Login user
-#             login(request, user)
-#             PassportInfo.objects.get_or_create(user=user)
-
-#             # Clear phone from session
-#             request.session.pop('guest_phone', None)
-
-#             return redirect('guest_dashboard')
-#         else:
-#             context = {'error': 'Invalid OTP'}
-#             return render(request, 'accounts/guest_otp_verify.html', context)
-
-
-
-#     return render(request, 'accounts/guest_otp_verify.html')
-
 
 
 
@@ -505,47 +404,6 @@ class GuestChangePasswordView(LoginRequiredMixin, TemplateView):
 
 
 
-
-
-
-
-
-
-@login_required
-def guest_cv_list_panel(request):
-    guest_cvs = TravelAgencyCV.objects.select_related('user').all()
-    return render(request, 'dashboard/guest_cv_list_panel.html', {'guest_cvs': guest_cvs})
-
-@login_required
-def guest_cv_list(request):
-    guest_cvs = TravelAgencyCV.objects.select_related('user').all()
-    return render(request, 'dashboard/guest_cv_list.html', {'guest_cvs': guest_cvs})
-    # return render(request, 'hr/hr_guest_cvs_list.html', {'guest_cvs': guest_cvs})
-
-@login_required
-def guest_cv_detail_by_pk(request, pk):
-    cv = get_object_or_404(TravelAgencyCV, pk=pk)
-    return render(request, 'dashboard/guest_cv.html', {'cv': cv})
-
-
-
-# @login_required
-# def hr_guest_cvs_list(request):
-#     guest_cvs = TravelAgencyCV.objects.select_related('user').all()
-#     return render(request, 'dashboard/hr_guest_cvs_list.html', {'guest_cvs': guest_cvs})
-#     # return render(request, 'hr/hr_guest_cvs_list.html', {'guest_cvs': guest_cvs})
-
-
-
-@login_required
-def guest_dashboard(request):
-    if request.user.role != 'guest':
-        return redirect('home')
-
-    # return render(request, 'accounts/guest_dashboard.html')
-    return render(request, 'dashboard/guest_d.html')
-
-
 @login_required
 def guest_change_password(request):
     if request.user.role != 'guest':
@@ -564,144 +422,3 @@ def guest_change_password(request):
         form = PasswordChangeForm(user=request.user)
 
     return render(request, 'accounts/guest_change_password.html', {'form': form})
-
-
-@login_required
-def view_guest_cv(request):
-
-    return render(request, 'accounts/guest_cv.html')
-
-
-@login_required
-def view_guest_cv_by_pk(request, pk):
-    cv = get_object_or_404(TravelAgencyCV, pk=pk)
-    return render(request, 'dashboard/guest_cv.html', {'cv': cv})
-
-
-
-
-@login_required
-def admin_dashboard(request):
-    if request.user.role == 'admin':
-        # return render(request, 'accounts/admin_dashboard.html')
-        return render(request, 'dashboard/admin_d.html')
-    return redirect('home')
-
-@login_required
-def admin_index(request):
-    if request.user.role != 'admin':
-        return redirect('home')
-    return render(request, 'dashboard/admin_index.html')
-
-
-
-
-@login_required
-def hr_dashboard(request):
-    if request.user.role != 'hr':
-        return redirect('home')
-
-
-    # HR dashboard logic here
-    return render(request, 'accounts/hr_dashboard.html')
-
-
-
-
-@login_required
-def hr_view_guests_passport(request):
-    # Ensure only HR users can access
-    if request.user.role != 'hr':
-        return redirect('home')  # or permission denied page
-
-    # Get all PassportInfo for users with role 'guest'
-    guest_passports = PassportInfo.objects.filter(user__role='student')
-
-    context = {
-        'guest_passports': guest_passports,
-    }
-    return render(request, 'hr/hr_guest_passports.html', context)
-
-
-@login_required
-def hr_guest_cvs_list(request):
-    if request.user.role != 'hr':
-        return redirect('home')  # or permission denied page
-    guest_cvs = TravelAgencyCV.objects.select_related('user').all()
-    return render(request, 'hr/hr_guest_cvs_list.html', {'guest_cvs': guest_cvs})
-
-
-
-
-@login_required
-def guest_cv_detail(request, pk):
-
-    cv = TravelAgencyCV.objects.get(pk=pk)
-    return render(request, 'hr/guest_cv_detail.html', {'cv': cv})
-
-
-
-# from clients.forms import TravelAgencyCVForm
-
-# @login_required
-# def guest_cv_detail(request, pk):
-#     if request.user.role != 'hr':
-#         return redirect('home')
-
-#     cv = get_object_or_404(TravelAgencyCV, pk=pk)
-
-#     # Optional: confirm this cv belongs to a guest
-#     if cv.user.role != 'guest':
-#         return redirect('home')
-
-#     if request.method == 'POST':
-#         form = TravelAgencyCVForm(request.POST, request.FILES, instance=cv)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'CV updated successfully.')
-#             return redirect('guest_cv_detail', pk=cv.pk)  # Or wherever you want to redirect
-#         else:
-#             messages.error(request, 'Please correct the errors below.')
-#     else:
-#         form = TravelAgencyCVForm(instance=cv)
-
-#     return render(request, 'hr/guest_cv_edit.html', {'form': form, 'cv': cv})
-
-
-
-
-
-
-
-# Template paid
-
-# from django.views.generic import TemplateView
-# from web_project import TemplateLayout
-
-
-# # """
-# # This file is a view controller for multiple pages as a module.
-# # Here you can override the page view layout.
-# # Refer to test/urls.py file for more pages.
-# # """
-
-
-# class accountsView(TemplateView):
-#     # Predefined function
-#     def get_context_data(self, **kwargs):
-#         # A function to init the global layout. It is defined in web_project/__init__.py file
-#         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
-
-#         return context
-
-
-# from web_project import TemplateLayout
-# from web_project.template_helpers.theme import TemplateHelper
-
-# class accountsView(TemplateView):
-#     def get_context_data(self, **kwargs):
-#         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
-#         context.update({
-#             "layout_path": TemplateHelper.set_layout("layout_blank.html", context),  # ✅ This line is MANDATORY
-#         })
-#         return context

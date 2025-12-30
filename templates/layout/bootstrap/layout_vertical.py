@@ -117,7 +117,7 @@ def get_menu_file_path(role):
         "admin": "vertical_menu.json",
         "receptionist": "vertical_receptionist_menu.json",
         "teacher": "vertical_teacher_menu.json",
-        "student": "vertical_student_menu.json",
+        "guest": "vertical_menu_guest.json",
     }
     filename = filename_map.get(role, "vertical_menu.json")  # Default menu
     return Path(settings.BASE_DIR) / "templates" / "layout" / "partials" / "menu" / "vertical" / "json" / filename
@@ -143,8 +143,8 @@ class TemplateBootstrapLayoutVertical:
         elif isinstance(user, dict) and "role" in user:
             role = user["role"].lower()
         else:
-            role = "student"
-            print(f"DEBUG: User is {user}, defaulting role to 'student'")
+            role = "guest"
+            print(f"DEBUG: User is {user}, defaulting role to 'guest'")
 
         print(f"DEBUG: User: {user}, Role: {role}")
 

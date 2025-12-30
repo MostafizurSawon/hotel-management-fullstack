@@ -77,7 +77,6 @@
     }
 
     /* --- BALANCE COLUMN STYLE --- */
-    /* বর্ডার ট্রিক আগের মতোই থাকছে */
     .col-balance {
       width: 12%;
       font-weight: bold;
@@ -87,7 +86,6 @@
       border-left: 1px solid #666 !important;
       border-right: 1px solid var(--border-color) !important;
 
-      /* ফন্ট সাইজ একটু বড় করা হলো যাতে চোখে পড়ে */
       font-size: 13px;
       color: #000;
     }
@@ -204,7 +202,7 @@
     <tbody>
       {% for income, expense in combined_data %}
       <tr>
-        {% if income %}
+        {% comment %} {% if income %}
           <td>{{ forloop.counter }}</td>
           <td>{{ income.received_at|date:"d/m/Y" }}</td>
           <td>Booking</td>
@@ -212,6 +210,38 @@
           <td class="text-success" style="border-right: 1px solid #666;">{{ income.amount|intcomma }}</td>
         {% else %}
           <td>{{ forloop.counter }}</td><td></td><td></td><td></td><td style="border-right: 1px solid #666;"></td>
+        {% endif %} {% endcomment %}
+
+        {% if income %}
+          <td>{{ forloop.counter }}</td>
+          <td>{{ income.received_at|date:"d/m/Y" }}</td>
+          <td>Booking</td>
+
+          <td style="text-align:left;">
+            <strong>
+              {{ income.booking.guest.full_name|default:"Guest" }}
+            </strong><br>
+
+            {% if income.booking.guest.phone_number %}
+              📞 {{ income.booking.guest.phone_number }}<br>
+            {% endif %}
+
+            <span style="font-size:10px;">
+              Room {{ income.booking.room.room_number }}
+              | {{ income.booking.check_in|date:"d/m/Y" }}
+              → {{ income.booking.check_out|date:"d/m/Y" }}
+            </span>
+          </td>
+
+          <td class="text-success" style="border-right: 1px solid #666;">
+            {{ income.amount|intcomma }}
+          </td>
+        {% else %}
+          <td>{{ forloop.counter }}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td style="border-right: 1px solid #666;"></td>
         {% endif %}
 
         {% if expense %}
@@ -251,18 +281,14 @@
 
 <script>
   window.onload = function() {
-    // ১. ব্যালেন্সের ভ্যালুটি আমরা জ্যাঙ্গো থেকে নিচ্ছি
     const balanceValue = "{{ balance|intcomma }} Tk";
 
-    // ২. টেবিলের সব ডাটা রো খুঁজে বের করছি
     const tableBody = document.querySelector('#ledgerTableData tbody');
     const rows = tableBody.querySelectorAll('tr');
 
     if (rows.length > 0) {
-      // ৩. মাঝখানের রো ইনডেক্স বের করছি (Math.floor দিয়ে)
       const middleIndex = Math.floor((rows.length - 1) / 2);
 
-      // ৪. মাঝখানের রো-এর 'col-balance' সেলে ভ্যালুটি বসাচ্ছি
       const targetCell = rows[middleIndex].querySelector('.col-balance');
       if (targetCell) {
         targetCell.innerText = balanceValue;

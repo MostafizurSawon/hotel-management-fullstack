@@ -158,7 +158,7 @@
                   <span class="align-middle">My Profile</span>
                 </a>
               </li> {% endcomment %}
-              {% if request.user.role == 'student' %}
+              {% if request.user.role == 'guest' %}
               <li class="mb-3">
                 <a class="dropdown-item" href="{% url 'guest_change_password_dashboard' %}">
                   <i class="ti ti-settings me-3 ti-md"></i>

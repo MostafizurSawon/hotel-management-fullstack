@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 
 class Booking(models.Model):
     class Status(models.TextChoices):
+        PENDING     = "PENDING", "Pending Approval"
         RESERVED    = "RESERVED", "Reserved"
         CHECKED_IN  = "CHECKED_IN", "Checked-In"
         CHECKED_OUT = "CHECKED_OUT", "Checked-Out"
@@ -41,7 +42,12 @@ class Booking(models.Model):
     due_amount      = models.PositiveIntegerField(default=0)
     extra_amount    = models.PositiveIntegerField(default=0)
 
-    status          = models.CharField(max_length=20, choices=Status.choices, default=Status.RESERVED)
+    # status          = models.CharField(max_length=20, choices=Status.choices, default=Status.RESERVED)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING
+    )
     notes           = models.TextField(null=True, blank=True)
 
     created_by      = models.ForeignKey(

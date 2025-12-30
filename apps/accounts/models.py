@@ -78,4 +78,5 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     def __str__(self):
-        return f"{self.phone_number} ({self.get_role_display()})"
+        return f"{self.phone_number}"
+        # return f"{self.phone_number} ({self.get_role_display()})"

@@ -1,13 +1,6 @@
-# from django.shortcuts import render, redirect, get_object_or_404
-# from django.contrib import messages
-
-# def home(request):
-#     # return redirect('index')
-#     return render(request, 'home.html')
-
-
 from django.views.generic import TemplateView
 from web_project import TemplateLayout, TemplateHelper
+from apps.room.models import Category
 
 class HomeView(TemplateView):
     template_name = "home.html"
@@ -22,6 +15,10 @@ class HomeView(TemplateView):
                 "layout_blank.html", context
             ),
             "is_front": True,
+
+            # 🔹 REQUIRED for search form
+            "room_categories": Category.objects.all().order_by("name"),
+            "searched": False,
         })
 
         return context

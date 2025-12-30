@@ -1,7 +1,7 @@
 {% extends layout_path %}
 {% load static %}
 {% load i18n %}
-{% block title %} OTP যাচাই - Go on TravelDesk {% endblock title %}
+{% block title %} OTP যাচাই - {{site_settings.name|default:""}} {% endblock title %}
 
 {% block vendor_css %}
   {{ block.super }}
@@ -30,12 +30,19 @@
   <!-- Logo -->
   <a href="{% url 'home' %}" class="app-brand auth-cover-brand">
     <span class=" d-inline-block">
-      <img src="{% static 'cus/logo.png' %}"
-           alt="College Logo"
-           class="rounded-circle border shadow-sm"
+      {% if site_settings.logo %}
+      <img src="{{site_settings.logo.url}}"
+           alt="Hotel Logo"
+           class=""
            style="height:56px; width:56px; object-fit:cover; display:block;">
+      {% else %}
+      <img src="{% static 'cus/logo.png' %}"
+           alt="Hotel Logo"
+           class=""
+           style="height:56px; width:56px; object-fit:cover; display:block;">
+      {% endif %}
     </span>
-    <span class="app-brand-text demo text-heading fw-bold">Nawabganj City College</span>
+    <span class="app-brand-text demo text-heading fw-bold">{{site_settings.name|default:""}}</span>
   </a>
   <!-- /Logo -->
 

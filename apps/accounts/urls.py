@@ -7,15 +7,15 @@ from .views_smslog import SmsLogListPage, SmsLogExportCSVView
 
 
 urlpatterns = [
-    # path('register/', GuestRegisterView.as_view(), name='guest_register'),
+    path('register/', GuestRegisterView.as_view(), name='guest_register'),
     path('login/', LoginView.as_view(), name='guest_login'),
 
     path('logout/', CustomLogoutView.as_view(), name='logoutt'),
 
     path('otp-verify/', GuestOtpVerifyView.as_view(), name='guest_otp_verify'),
 
-    path('dashboard/', views.guest_dashboard, name='guest_dashboard'),
-    path('change-password/', views.guest_change_password, name='guest_change_password'),
+    # path('dashboard/', views.guest_dashboard, name='guest_dashboard'),
+    # path('change-password/', views.guest_change_password, name='guest_change_password'),
 
 
     # role based dashboard

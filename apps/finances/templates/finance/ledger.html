@@ -114,7 +114,21 @@
             <td>{{ forloop.counter }}</td>
             <td>{{ income.received_at|date:"d/m/Y" }}</td>
             <td>Booking</td>
-            <td>Booking Income</td>
+            <td class="text-start">
+              <strong>
+                {{ income.booking.guest.full_name|default:"Guest" }}
+              </strong><br>
+
+              {% if income.booking.guest.phone_number %}
+                📞 {{ income.booking.guest.phone_number }}<br>
+              {% endif %}
+
+              <small class="">
+                Room: {{ income.booking.room.room_number }}
+                | {{ income.booking.check_in|date:"d/m/Y" }}
+                → {{ income.booking.check_out|date:"d/m/Y" }}
+              </small>
+            </td>
             <td class="text-success">{{ income.amount|intcomma }} ৳</td>
           {% else %}
             <td></td>

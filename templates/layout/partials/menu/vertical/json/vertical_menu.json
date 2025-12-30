@@ -32,32 +32,7 @@
       "name": "Booking List",
       "slug": "booking_list"
     },
-    { "menu_header": "—— Room Section ——" },
-    {
-      "url": "room_overview",
-      "icon": "menu-icon tf-icons ti ti-bed",
-      "name": "Room Overview",
-      "slug": "room_overview"
-    },
-    {
-      "url": "room_list",
-      "icon": "menu-icon tf-icons ti ti-home-plus",
-      "name": "Add Room",
-      "slug": "room_list"
-    },
-    { "menu_header": "—— Reports and Log ——" },
-    {
-      "url": "report_summary",
-      "icon": "menu-icon tf-icons ti ti-chart-bar",
-      "name": "Reports",
-      "slug": "report_summary"
-    },
-    {
-      "url": "sms_log_list",
-      "icon": "menu-icon tf-icons ti ti-message-dots",
-      "name": "SMS Log",
-      "slug": "sms_log_list"
-    },
+
     { "menu_header": "—— Financial Section ——" },
     {
       "url": "payment_list",
@@ -87,6 +62,32 @@
       "icon": "menu-icon tf-icons ti ti-report",
       "name": "Income Expense Ledger",
       "slug": "ledger_view"
+    },
+    { "menu_header": "—— Room Section ——" },
+    {
+      "url": "room_overview",
+      "icon": "menu-icon tf-icons ti ti-bed",
+      "name": "Room Overview",
+      "slug": "room_overview"
+    },
+    {
+      "url": "room_list",
+      "icon": "menu-icon tf-icons ti ti-home-plus",
+      "name": "Add Room",
+      "slug": "room_list"
+    },
+    { "menu_header": "—— Reports and Log ——" },
+    {
+      "url": "report_summary",
+      "icon": "menu-icon tf-icons ti ti-chart-bar",
+      "name": "Reports",
+      "slug": "report_summary"
+    },
+    {
+      "url": "sms_log_list",
+      "icon": "menu-icon tf-icons ti ti-message-dots",
+      "name": "SMS Log",
+      "slug": "sms_log_list"
     },
     { "menu_header": "—— General Settings ——" },
     {

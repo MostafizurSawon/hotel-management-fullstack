@@ -1,0 +1,16 @@
+{
+  "menu": [
+    {
+      "url": "index",
+      "icon": "menu-icon tf-icons ti ti-layout-dashboard",
+      "name": "Dashboard",
+      "slug": "index_guest"
+    },
+    {
+      "url": "guest_booking_create",
+      "icon": "menu-icon tf-icons ti ti-calendar-plus",
+      "name": "Book Room",
+      "slug": "guest_booking_create"
+    }
+  ]
+}

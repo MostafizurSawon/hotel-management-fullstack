@@ -1,6 +1,16 @@
 {% extends layout_path %}
 {% block content %}
-<div class="container-xxl">
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
   <div class="alert alert-danger mt-3">
     <h4 class="alert-heading">No Access</h4>
     <p>You do not have permission to access this page.</p>

@@ -1,0 +1,183 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}Request Booking{% endblock %}
+
+{% block content %}
+<div class="">
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white mb-4">
+      <h5 class="mb-0 text-white">Confirm Your Booking</h5>
+      <small class="text-white-100">
+        Your request will be reviewed by reception
+      </small>
+    </div>
+
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-3">
+
+          <!-- Room -->
+          <div class="col-md-6">
+            <label class="form-label">Room</label>
+
+            <select name="room" id="roomSelect" class="form-select">
+              <option value="">Select room</option>
+              {% for r in room_options %}
+                <option value="{{ r.id }}"
+                        data-rate="{{ r.rate }}"
+                        {% if form.initial.room|stringformat:"s" == r.id|stringformat:"s" %}
+                          selected
+                        {% endif %}>
+                  {{ r.label }}
+                </option>
+              {% endfor %}
+            </select>
+
+            <div class="form-text">
+              You may change the room if needed
+            </div>
+          </div>
+
+          <!-- Price -->
+          <div class="col-md-6">
+            <label class="form-label">Price / Night (BDT)</label>
+            {{ form.nightly_rate }}
+          </div>
+
+          <!-- Check-in -->
+          <div class="col-md-6">
+            <label class="form-label">Check-in</label>
+            {{ form.check_in }}
+          </div>
+
+          <!-- Check-out -->
+          <div class="col-md-6">
+            <label class="form-label">Check-out</label>
+            {{ form.check_out }}
+          </div>
+
+          <!-- Availability -->
+          <div class="col-12">
+            <div id="availabilityMsg" class="form-text"></div>
+          </div>
+
+          <!-- Calculated info -->
+          <div class="col-md-4">
+            <label class="form-label">Nights</label>
+            <input id="nights" class="form-control" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Estimated Total (BDT)</label>
+            <input id="grossAmount" class="form-control" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <input class="form-control" value="Pending approval" readonly>
+          </div>
+
+          <!-- Notes -->
+          <div class="col-12">
+            <label class="form-label">Notes (optional)</label>
+            {{ form.notes }}
+          </div>
+
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button type="submit" class="btn btn-primary">
+            Submit Booking Request
+          </button>
+
+          <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+            Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  input[readonly] {
+    background-color: #f8f9fa;
+  }
+</style>
+
+<script>
+  const roomSelect  = document.getElementById("roomSelect");
+  const rateInput  = document.getElementById("nightlyRate");
+  const checkIn    = document.getElementById("checkIn");
+  const checkOut   = document.getElementById("checkOut");
+  const nightsEl   = document.getElementById("nights");
+  const grossEl    = document.getElementById("grossAmount");
+  const availMsg   = document.getElementById("availabilityMsg");
+
+  function daysBetween(a, b) {
+    if (!a || !b) return 0;
+    const d1 = new Date(a);
+    const d2 = new Date(b);
+    const ms = 1000 * 60 * 60 * 24;
+    return Math.max(0, Math.round((d2 - d1) / ms));
+  }
+
+  async function checkAvailability() {
+    if (!roomSelect.value || !checkIn.value || !checkOut.value) return;
+
+    availMsg.textContent = "Checking availability…";
+    availMsg.className = "form-text text-muted";
+
+    try {
+      const res = await fetch(
+        `{% url 'api_room_availability' %}?room=${roomSelect.value}&in=${checkIn.value}&out=${checkOut.value}`
+      );
+      const data = await res.json();
+
+      if (data.available) {
+        availMsg.textContent = "Room available for selected dates";
+        availMsg.className = "form-text text-success";
+      } else {
+        availMsg.textContent = "Room not available for selected dates";
+        availMsg.className = "form-text text-danger";
+      }
+    } catch {
+      availMsg.textContent = "Could not verify availability";
+      availMsg.className = "form-text text-warning";
+    }
+  }
+
+  function recalc() {
+    const nights = daysBetween(checkIn.value, checkOut.value);
+    nightsEl.value = nights;
+
+    const selected = roomSelect.options[roomSelect.selectedIndex];
+    const rate = selected?.dataset?.rate || 0;
+
+    rateInput.value = rate;
+    grossEl.value = nights * parseInt(rate);
+
+    checkAvailability();
+  }
+
+  [roomSelect, checkIn, checkOut].forEach(el => {
+    el?.addEventListener("change", recalc);
+  });
+
+  document.addEventListener("DOMContentLoaded", recalc);
+</script>
+{% endblock %}

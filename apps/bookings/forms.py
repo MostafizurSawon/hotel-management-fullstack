@@ -420,3 +420,114 @@ class PaymentEditForm(forms.ModelForm):
         cleaned = super().clean()
         # over/under validation একইভাবে থাকবে — model.clean() চলবেই save-এর সময়
         return cleaned
+
+
+
+
+# Guest Mode
+from django import forms
+from datetime import timedelta
+from apps.bookings.models import Booking
+from apps.room.models import Room
+
+
+class GuestBookingForm(forms.ModelForm):
+    # date inputs (same UX as admin)
+    check_in = forms.DateField(
+        input_formats=['%d-%m-%Y', '%Y-%m-%d'],
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
+            "type": "date",
+            "class": "form-control",
+            "id": "checkIn",
+        }),
+        required=True
+    )
+
+    check_out = forms.DateField(
+        input_formats=['%d-%m-%Y', '%Y-%m-%d'],
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
+            "type": "date",
+            "class": "form-control",
+            "id": "checkOut",
+        }),
+        required=True
+    )
+
+    class Meta:
+        model = Booking
+        fields = [
+            "room",
+            "check_in",
+            "check_out",
+            "nightly_rate",
+            "notes",
+        ]
+        widgets = {
+            "room": forms.Select(attrs={
+                "class": "form-select",
+                "id": "roomSelect",
+            }),
+            "nightly_rate": forms.NumberInput(attrs={
+                "class": "form-control",
+                "id": "nightlyRate",
+                "readonly": "readonly",
+            }),
+            "notes": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Any special notes (optional)…",
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        rooms_qs = kwargs.pop("rooms_qs", None)
+        super().__init__(*args, **kwargs)
+
+        # room list
+        self.fields["room"].queryset = (
+            rooms_qs if rooms_qs is not None
+            else Room.objects.select_related("category").order_by("room_number")
+        )
+
+        # guest cannot edit these (forced backend)
+        self.fields["nightly_rate"].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+
+        ci = cleaned.get("check_in")
+        co = cleaned.get("check_out")
+
+        # date validation
+        if ci and co:
+            if co <= ci:
+                cleaned["check_out"] = ci + timedelta(days=1)
+
+        room = cleaned.get("room")
+
+        # always freeze room price
+        if room:
+            cleaned["nightly_rate"] = int(getattr(room, "price", 0) or 0)
+
+        return cleaned
+
+    def save(self, commit=True, guest=None, request_user=None):
+        obj = super().save(commit=False)
+
+        # 🔒 force guest ownership
+        if guest:
+            obj.guest = guest
+
+        # 🔒 guest booking rules
+        obj.status = Booking.Status.PENDING
+        obj.discount_amount = 0
+        obj.payment_amount = 0
+        obj.extra_amount = 0
+
+        if request_user:
+            obj.created_by = request_user
+
+        if commit:
+            obj.save()
+
+        return obj
