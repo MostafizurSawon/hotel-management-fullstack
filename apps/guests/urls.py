@@ -9,4 +9,7 @@ urlpatterns = [
     path("<int:pk>/", views.GuestDetailPage.as_view(), name="detail"),
     path("<int:pk>/edit/", views.GuestEditPage.as_view(), name="edit"),
     path("<int:pk>/delete/", views.GuestDeleteView.as_view(), name="delete"),
+
+    # Guest profile edit (OWN profile)
+    path("profile/edit/", views.GuestProfileUpdateView.as_view(), name="guest_profile_edit"),
 ]

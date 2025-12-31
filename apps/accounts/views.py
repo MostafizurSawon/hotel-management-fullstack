@@ -12,6 +12,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.views.generic import TemplateView
 from web_project import TemplateLayout
 from web_project.template_helpers.theme import TemplateHelper
+from apps.guests.services import ensure_guest_profile
 
 from django.views import View
 
@@ -227,7 +228,17 @@ class LoginView(TemplateView):
                 messages.error(request, "আপনার অ্যাকাউন্ট এখনো অ্যাক্টিভ নয়। অনুগ্রহ করে OTP যাচাই করুন।")
                 return redirect('guest_otp_verify')
 
+            # login(request, user)
+            # messages.success(request, f"{user.phone_number} এর জন্য সফলভাবে লগইন হয়েছে।")
+            # return redirect('index')
+
+
+
             login(request, user)
+
+            if user.role == "guest":
+                ensure_guest_profile(user)
+
             messages.success(request, f"{user.phone_number} এর জন্য সফলভাবে লগইন হয়েছে।")
             return redirect('index')
 

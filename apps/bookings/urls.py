@@ -15,6 +15,7 @@ urlpatterns = [
         name="guest_booking_create",
     ),
 
+
     # path("guest/booking/success/", TemplateView.as_view(
     #     template_name="bookings/guest_booking_success.html"
     # ), name="guest_booking_success"),

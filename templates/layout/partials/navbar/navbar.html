@@ -69,26 +69,6 @@
         <!-- / Style Switcher-->
 
         <ul class="navbar-nav flex-row align-items-center ms-auto">
-          {% comment %} {% if not request.user.role == 'guest' %}
-          <li class="me-3">
-            <form method="POST" action="{% url 'set_session' %}">
-              {% csrf_token %}
-              <div class="input-group">
-                <label class="input-group-text" for="sessionSelect">Session</label>
-                <select class="form-select" id="sessionSelect" name="session" onchange="this.form.submit()">
-                  {% for ses in sessions %}
-                    <option value="{{ ses.id }}" {% if active_session and active_session.id == ses.id %}selected{% endif %}>
-                      {{ ses.ses_name }}
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
-            </form>
-          </li>
-          {% endif %} {% endcomment %}
-
-
-
           <!-- User -->
          <li class="nav-item navbar-dropdown dropdown-user dropdown">
 
@@ -152,12 +132,13 @@
               {% comment %} <li>
                 <div class="dropdown-divider"></div>
               </li> {% endcomment %}
-              {% comment %} <li>
-                <a class="dropdown-item" href="javascript:void(0);">
+
+              <li>
+                <a class="dropdown-item" href="{% url 'guest_profile_edit' %}">
                   <i class="ti ti-user me-3 ti-md"></i>
                   <span class="align-middle">My Profile</span>
                 </a>
-              </li> {% endcomment %}
+              </li>
               {% if request.user.role == 'guest' %}
               <li class="mb-3">
                 <a class="dropdown-item" href="{% url 'guest_change_password_dashboard' %}">

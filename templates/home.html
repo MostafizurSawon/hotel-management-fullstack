@@ -313,7 +313,7 @@
               {% elif not request.user.is_authenticated %}
 
                 <!-- Not logged in → full register flow -->
-                <a href="{% url 'guest_register' %}?next={% url 'guest_booking_create' %}?room={{ r.id }}&check_in={{ check_in }}&check_out={{ check_out }}"
+                <a href="{% url 'guest_login' %}?next={% url 'guest_booking_create' %}?room={{ r.id }}&check_in={{ check_in }}&check_out={{ check_out }}"
                   class="btn btn-primary btn-sm">
                   Book Now
                 </a>

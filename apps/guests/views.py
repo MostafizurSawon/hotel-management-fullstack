@@ -340,3 +340,43 @@ class GuestDeleteView(RequireAnyRoleMixin, View):
         except Guest.DoesNotExist:
             messages.error(request, "Guest not found or already deleted.")
         return redirect("list")
+
+
+
+
+
+
+# guest profile edit view (for logged-in guest users)
+
+
+from django.views.generic import UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect
+from web_project import TemplateLayout, TemplateHelper
+
+from .models import Guest
+from .forms import GuestProfileForm
+
+class GuestProfileUpdateView(LoginRequiredMixin, UpdateView):
+    model = Guest
+    form_class = GuestProfileForm
+    template_name = "guests/guest_profile_edit.html"
+    success_url = "/guest/profile/"
+
+    def dispatch(self, request, *args, **kwargs):
+        # শুধু guest role
+        if request.user.role != "guest":
+            return redirect("index")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        # logged-in guest এর profile
+        return self.request.user.guest_profile
+
+    def get_context_data(self, **kwargs):
+        ctx = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        ctx.update({
+            "layout_path": TemplateHelper.set_layout("layout_vertical.html", ctx),
+            "page_title": "Edit Profile",
+        })
+        return ctx

@@ -29,7 +29,7 @@ class GuestCreateForm(forms.ModelForm):
         placeholders = {
             "full_name": "Full Name",
             "phone_number": "e.g., 01920693718",
-            "email": "Email (optional)",
+            "email": "Email",
             "father_name": "Father Name",
             "nid_passport": "NID or Passport Number",
             "age": "Age",
@@ -162,3 +162,91 @@ CompanionFormSet = inlineformset_factory(
     extra=0,
     can_delete=True,
 )
+
+
+
+
+
+
+
+
+
+# Guest owner user account profile
+from django import forms
+from .models import Guest
+
+class GuestProfileForm(forms.ModelForm):
+    class Meta:
+        model = Guest
+        fields = [
+            "full_name",
+            "phone_number",
+            "email",
+            "father_name",
+            "nid_passport",
+            "age",
+            "profession",
+            "company",
+            "nationality",
+            "address",
+            "photo",
+        ]
+        widgets = {
+            "full_name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Full name",
+            }),
+
+            "phone_number": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Phone number",
+                "readonly": "readonly",   # 🔒 immutable
+            }),
+
+            "email": forms.EmailInput(attrs={
+                "class": "form-control",
+                "placeholder": "Email address (optional)",
+            }),
+
+            "father_name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Father's name",
+            }),
+
+            "nid_passport": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "NID or Passport number",
+            }),
+
+            "age": forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder": "Age",
+                "min": "0",
+            }),
+
+            "profession": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Profession",
+            }),
+
+            "company": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Company / Organization",
+            }),
+
+            "nationality": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Nationality",
+            }),
+
+            "address": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Full address",
+            }),
+
+            "photo": forms.ClearableFileInput(attrs={
+                "class": "form-control",
+                "accept": "image/*",
+            }),
+        }
